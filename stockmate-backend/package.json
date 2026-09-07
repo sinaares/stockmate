@@ -4,7 +4,9 @@
     "description":  "StockMate inventory management backend",
     "main":  "index.js",
     "scripts":  {
-                    "test":  "echo \"Error: no test specified\" \u0026\u0026 exit 1"
+                    "start": "node index.js",
+                    "dev": "node --watch index.js",
+                    "test":  "echo \"Error: no test specified\" && exit 1"
                 },
     "keywords":  [
 
