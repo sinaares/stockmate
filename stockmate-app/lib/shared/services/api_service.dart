@@ -1,0 +1,147 @@
+﻿import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+class ApiService {
+  static ApiService? _instance;
+  static ApiService get instance => _instance ??= ApiService._();
+  ApiService._();
+
+  final _storage = const FlutterSecureStorage();
+  late Dio _dio;
+  String _baseUrl = 'http://192.168.1.100:3000';
+
+  Future<void> init() async {
+    final savedUrl = await _storage.read(key: 'server_url');
+    if (savedUrl != null) _baseUrl = savedUrl;
+    _initDio();
+  }
+
+  void _initDio() {
+    _dio = Dio(BaseOptions(
+      baseUrl: _baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 15),
+      headers: {'Content-Type': 'application/json'},
+    ));
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token = await _storage.read(key: 'auth_token');
+        if (token != null) options.headers['Authorization'] = 'Bearer $token';
+        return handler.next(options);
+      },
+      onError: (error, handler) {
+        return handler.next(error);
+      },
+    ));
+  }
+
+  Future<void> setBaseUrl(String url) async {
+    _baseUrl = url;
+    await _storage.write(key: 'server_url', value: url);
+    _initDio();
+  }
+
+  String get baseUrl => _baseUrl;
+
+  // Auth
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final res = await _dio.post('/auth/login', data: {'email': email, 'password': password});
+    await _storage.write(key: 'auth_token', value: res.data['token']);
+    return res.data;
+  }
+
+  Future<void> logout() async {
+    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: 'user_data');
+  }
+
+  Future<String?> getToken() => _storage.read(key: 'auth_token');
+
+  // Products
+  Future<List<dynamic>> getProducts({String? search, int? categoryId, bool lowStock = false}) async {
+    final res = await _dio.get('/products', queryParameters: {
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (categoryId != null) 'category_id': categoryId,
+      if (lowStock) 'low_stock': '1',
+    });
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> getProductByCode(String code) async {
+    final res = await _dio.get('/products/lookup/$code');
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> createProduct(Map<String, dynamic> data) async {
+    final res = await _dio.post('/products', data: data);
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> updateProduct(int id, Map<String, dynamic> data) async {
+    final res = await _dio.put('/products/$id', data: data);
+    return res.data;
+  }
+
+  Future<void> deleteProduct(int id) async {
+    await _dio.delete('/products/$id');
+  }
+
+  // Requests / Approvals
+  Future<List<dynamic>> getRequests({String? status}) async {
+    final res = await _dio.get('/requests', queryParameters: {if (status != null) 'status': status});
+    return res.data;
+  }
+
+  Future<int> getPendingCount() async {
+    final res = await _dio.get('/requests/count/pending');
+    return res.data['count'];
+  }
+
+  Future<Map<String, dynamic>> submitRequest(Map<String, dynamic> data) async {
+    final res = await _dio.post('/requests', data: data);
+    return res.data;
+  }
+
+  Future<void> approveRequest(int id) async {
+    await _dio.put('/requests/$id/approve');
+  }
+
+  Future<void> rejectRequest(int id, String reason) async {
+    await _dio.put('/requests/$id/reject', data: {'reason': reason});
+  }
+
+  // Transactions
+  Future<List<dynamic>> getTransactions({int? productId, String? actionType}) async {
+    final res = await _dio.get('/transactions', queryParameters: {
+      if (productId != null) 'product_id': productId,
+      if (actionType != null) 'action_type': actionType,
+    });
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> getStats() async {
+    final res = await _dio.get('/transactions/stats');
+    return res.data;
+  }
+
+  // Employees
+  Future<List<dynamic>> getEmployees() async {
+    final res = await _dio.get('/employees');
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> createEmployee(Map<String, dynamic> data) async {
+    final res = await _dio.post('/employees', data: data);
+    return res.data;
+  }
+
+  Future<void> toggleEmployee(int id) async {
+    await _dio.put('/employees/$id/toggle');
+  }
+
+  // Categories
+  Future<List<dynamic>> getCategories() async {
+    final res = await _dio.get('/categories');
+    return res.data;
+  }
+}

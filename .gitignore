@@ -1,0 +1,64 @@
+# ===========================
+# Node.js / Backend
+# ===========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*
+!.env.example
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# ===========================
+# Flutter / Dart
+# ===========================
+# Build outputs
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+
+# Generated files
+*.g.dart
+*.freezed.dart
+
+# iOS
+stockmate-app/ios/Pods/
+stockmate-app/ios/.symlinks/
+stockmate-app/ios/Flutter/App.framework
+stockmate-app/ios/Flutter/Flutter.framework
+stockmate-app/ios/Flutter/Flutter.podspec
+stockmate-app/ios/Flutter/Generated.xcconfig
+stockmate-app/ios/Flutter/ephemeral/
+stockmate-app/ios/Flutter/app.flx
+stockmate-app/ios/Flutter/app.zip
+stockmate-app/ios/Flutter/flutter_assets/
+stockmate-app/ios/ServiceDefinitions.json
+stockmate-app/ios/Runner/GeneratedPluginRegistrant.*
+
+# Android
+stockmate-app/android/.gradle/
+stockmate-app/android/captures/
+stockmate-app/android/gradlew
+stockmate-app/android/gradlew.bat
+stockmate-app/android/local.properties
+stockmate-app/android/**/GeneratedPluginRegistrant.java
+stockmate-app/android/key.properties
+stockmate-app/android/**/*.keystore
+stockmate-app/android/**/*.jks
+
+# ===========================
+# OS & Editor
+# ===========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

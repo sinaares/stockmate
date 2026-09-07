@@ -1,0 +1,17 @@
+﻿# iOS Setup Notes
+
+Add these keys to your Info.plist (Runner/Info.plist):
+
+<key>NSCameraUsageDescription</key>
+<string>StockMate needs camera access to scan barcodes and serial numbers.</string>
+<string>StockMate, barkod ve seri numaralarini taramak icin kamera erisimi gerektirir.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>StockMate needs access to your photo library.</string>
+
+The app uses HTTP (not HTTPS) to connect to your local office server.
+Add to Info.plist under NSAppTransportSecurity:
+<key>NSAppTransportSecurity</key>
+<dict>
+  <key>NSAllowsArbitraryLoads</key>
+  <true/>
+</dict>
