@@ -178,4 +178,17 @@ class ApiService {
     final res = await _dio.get('/categories');
     return res.data;
   }
+
+  // Profile & Password
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await _dio.put('/auth/change-password', data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  Future<Map<String, dynamic>> updateProfile(String name) async {
+    final res = await _dio.put('/auth/profile', data: {'name': name});
+    return res.data;
+  }
 }

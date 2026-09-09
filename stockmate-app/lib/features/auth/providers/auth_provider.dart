@@ -1,5 +1,7 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/user_model.dart';
 import '../../../shared/services/api_service.dart';
@@ -18,21 +20,49 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  final _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage? _storage = kIsWeb ? null : const FlutterSecureStorage();
+  SharedPreferences? _prefs;
 
   AuthNotifier() : super(const AuthState()) {
     _tryAutoLogin();
   }
 
+  Future<void> _write(String key, String value) async {
+    if (kIsWeb) {
+      _prefs ??= await SharedPreferences.getInstance();
+      await _prefs!.setString(key, value);
+    } else {
+      await _storage!.write(key: key, value: value);
+    }
+  }
+
+  Future<String?> _read(String key) async {
+    if (kIsWeb) {
+      _prefs ??= await SharedPreferences.getInstance();
+      return _prefs!.getString(key);
+    } else {
+      return _storage!.read(key: key);
+    }
+  }
+
+  Future<void> _delete(String key) async {
+    if (kIsWeb) {
+      _prefs ??= await SharedPreferences.getInstance();
+      await _prefs!.remove(key);
+    } else {
+      await _storage!.delete(key: key);
+    }
+  }
+
   Future<void> _tryAutoLogin() async {
-    final token = await _storage.read(key: 'auth_token');
-    final userData = await _storage.read(key: 'user_data');
-    if (token != null && userData != null) {
-      try {
+    try {
+      final token = await _read('auth_token');
+      final userData = await _read('user_data');
+      if (token != null && userData != null) {
         final user = UserModel.fromJson(jsonDecode(userData));
         state = AuthState(user: user);
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
   }
 
   Future<bool> login(String email, String password) async {
@@ -40,7 +70,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final data = await ApiService.instance.login(email, password);
       final user = UserModel.fromJson(data['user']);
-      await _storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
+      await _write('user_data', jsonEncode(user.toJson()));
       state = AuthState(user: user);
       return true;
     } catch (e) {
@@ -54,8 +84,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> updateName(String name) async {
+    if (state.user == null) return;
+    final updated = UserModel(
+      id: state.user!.id,
+      name: name,
+      email: state.user!.email,
+      role: state.user!.role,
+    );
+    await _write('user_data', jsonEncode(updated.toJson()));
+    state = state.copyWith(user: updated);
+  }
+
   Future<void> logout() async {
     await ApiService.instance.logout();
+    await _delete('auth_token');
+    await _delete('user_data');
     state = const AuthState();
   }
 }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/providers/auth_provider.dart';
@@ -12,6 +12,7 @@ import '../features/scanner/screens/scanner_screen.dart';
 import '../features/requests/screens/approvals_screen.dart';
 import '../features/requests/screens/my_requests_screen.dart';
 import '../features/employees/screens/employees_screen.dart';
+import '../features/settings/settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
@@ -51,15 +52,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// Placeholder screens (will be replaced)
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-    appBar: AppBar(title: const Text('Ayarlar / Settings')),
-    body: Center(child: Text('Settings coming soon', style: Theme.of(context).textTheme.bodyLarge)),
-  );
-}
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
