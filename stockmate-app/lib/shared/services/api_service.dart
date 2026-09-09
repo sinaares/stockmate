@@ -1,17 +1,51 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static ApiService? _instance;
   static ApiService get instance => _instance ??= ApiService._();
   ApiService._();
 
-  final _storage = const FlutterSecureStorage();
+  // Never instantiate FlutterSecureStorage on web — it crashes the app
+  final FlutterSecureStorage? _storage = kIsWeb ? null : const FlutterSecureStorage();
+  SharedPreferences? _prefs;
   late Dio _dio;
-  String _baseUrl = 'http://192.168.1.100:3000';
+  String _baseUrl = 'http://localhost:3000';
+
+  Future<void> _write(String key, String value) async {
+    if (kIsWeb) {
+      _prefs ??= await SharedPreferences.getInstance();
+      await _prefs!.setString(key, value);
+    } else {
+      await _storage!.write(key: key, value: value);
+    }
+  }
+
+  Future<String?> _read(String key) async {
+    if (kIsWeb) {
+      _prefs ??= await SharedPreferences.getInstance();
+      return _prefs!.getString(key);
+    } else {
+      return _storage!.read(key: key);
+    }
+  }
+
+  Future<void> _delete(String key) async {
+    if (kIsWeb) {
+      _prefs ??= await SharedPreferences.getInstance();
+      await _prefs!.remove(key);
+    } else {
+      await _storage!.delete(key: key);
+    }
+  }
 
   Future<void> init() async {
-    final savedUrl = await _storage.read(key: 'server_url');
+    if (kIsWeb) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    final savedUrl = await _read('server_url');
     if (savedUrl != null) _baseUrl = savedUrl;
     _initDio();
   }
@@ -25,7 +59,7 @@ class ApiService {
     ));
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'auth_token');
+        final token = await _read('auth_token');
         if (token != null) options.headers['Authorization'] = 'Bearer $token';
         return handler.next(options);
       },
@@ -37,7 +71,7 @@ class ApiService {
 
   Future<void> setBaseUrl(String url) async {
     _baseUrl = url;
-    await _storage.write(key: 'server_url', value: url);
+    await _write('server_url', url);
     _initDio();
   }
 
@@ -46,16 +80,16 @@ class ApiService {
   // Auth
   Future<Map<String, dynamic>> login(String email, String password) async {
     final res = await _dio.post('/auth/login', data: {'email': email, 'password': password});
-    await _storage.write(key: 'auth_token', value: res.data['token']);
+    await _write('auth_token', res.data['token']);
     return res.data;
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: 'auth_token');
-    await _storage.delete(key: 'user_data');
+    await _delete('auth_token');
+    await _delete('user_data');
   }
 
-  Future<String?> getToken() => _storage.read(key: 'auth_token');
+  Future<String?> getToken() => _read('auth_token');
 
   // Products
   Future<List<dynamic>> getProducts({String? search, int? categoryId, bool lowStock = false}) async {

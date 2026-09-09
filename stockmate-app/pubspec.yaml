@@ -1,4 +1,4 @@
-﻿name: stockmate
+name: stockmate
 description: StockMate - Inventory Management App for Electrical & Electronics Store
 publish_to: 'none'
 version: 1.0.0+1
@@ -36,7 +36,7 @@ dependencies:
   shimmer: ^3.0.0
 
   # Utils
-  intl: ^0.19.0
+  intl: 0.20.3
   shared_preferences: ^2.3.2
   permission_handler: ^11.3.1
 
