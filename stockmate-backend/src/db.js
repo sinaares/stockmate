@@ -1,11 +1,33 @@
-﻿// StockMate Backend — database setup and seed
-const Database = require('better-sqlite3');
+let DatabaseSync;
+try {
+  ({ DatabaseSync } = require('node:sqlite'));
+} catch (_) {}
+
 const bcrypt = require('bcryptjs');
 const path = require('path');
 require('dotenv').config();
 
 const DB_PATH = process.env.DB_PATH || './stockmate.db';
-const db = new Database(path.resolve(DB_PATH));
+let db;
+
+if (DatabaseSync) {
+  db = new DatabaseSync(path.resolve(DB_PATH));
+  db.pragma = (str) => db.exec(`PRAGMA ${str}`);
+  db.transaction = (fn) => (...args) => {
+    db.exec('BEGIN');
+    try {
+      const result = fn(...args);
+      db.exec('COMMIT');
+      return result;
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+  };
+} else {
+  const Database = require('better-sqlite3');
+  db = new Database(path.resolve(DB_PATH));
+}
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -76,6 +98,26 @@ function initDb() {
       note            TEXT,
       request_id      INTEGER REFERENCES requests(id),
       created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS technical_services (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name     TEXT    NOT NULL,
+      customer_phone    TEXT,
+      device_type       TEXT    NOT NULL CHECK(device_type IN ('laptop','phone','tablet','tv','other')),
+      device_brand      TEXT    NOT NULL,
+      device_model      TEXT,
+      serial_no         TEXT,
+      fault_description TEXT    NOT NULL,
+      parts_to_replace  TEXT,
+      technician_id     INTEGER REFERENCES users(id),
+      status            TEXT    NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting','in_progress','done','delivered','cancelled')),
+      note              TEXT,
+      price             REAL    NOT NULL DEFAULT 0,
+      created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
     );
   `);
 

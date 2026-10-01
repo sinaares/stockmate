@@ -495,7 +495,7 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   keyboardType: TextInputType.url,
                   decoration: _inputDecoration(
-                    'http://192.168.1.100:3000',
+                    'http://192.168.1.100:5000',
                     Icons.link_rounded,
                   ),
                 ),
@@ -505,9 +505,9 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
                     style: const TextStyle(color: Color(0xFF8B949E), fontSize: 11)),
                 const SizedBox(height: 8),
                 Wrap(spacing: 8, runSpacing: 8, children: [
-                  _presetBtn('localhost:3000', 'http://localhost:3000'),
-                  _presetBtn('127.0.0.1:3000', 'http://127.0.0.1:3000'),
-                  _presetBtn('10.0.2.2:3000', 'http://10.0.2.2:3000'),
+                   _presetBtn('localhost:5000', 'http://localhost:5000'),
+                  _presetBtn('127.0.0.1:5000', 'http://127.0.0.1:5000'),
+                  _presetBtn('10.0.2.2:5000', 'http://10.0.2.2:5000'),
                 ]),
                 if (_message != null) ...[
                   const SizedBox(height: 12),

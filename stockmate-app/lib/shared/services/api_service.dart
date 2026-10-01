@@ -46,7 +46,10 @@ class ApiService {
       _prefs = await SharedPreferences.getInstance();
     }
     final savedUrl = await _read('server_url');
-    if (savedUrl != null) _baseUrl = savedUrl;
+    // Migrate old default port 5000 -> 3000
+    if (savedUrl != null && savedUrl != 'http://localhost:5000') {
+      _baseUrl = savedUrl;
+    }
     _initDio();
   }
 
@@ -190,5 +193,43 @@ class ApiService {
   Future<Map<String, dynamic>> updateProfile(String name) async {
     final res = await _dio.put('/auth/profile', data: {'name': name});
     return res.data;
+  }
+
+  // Technical Services
+  Future<List<dynamic>> getTechnicalServices({String? status, String? deviceType, String? search}) async {
+    final res = await _dio.get('/technical-services', queryParameters: {
+      if (status != null) 'status': status,
+      if (deviceType != null) 'device_type': deviceType,
+      if (search != null && search.isNotEmpty) 'search': search,
+    });
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> getTechnicalServiceById(int id) async {
+    final res = await _dio.get('/technical-services/$id');
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> getTechnicalServiceStats() async {
+    final res = await _dio.get('/technical-services/stats');
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> createTechnicalService(Map<String, dynamic> data) async {
+    final res = await _dio.post('/technical-services', data: data);
+    return res.data;
+  }
+
+  Future<Map<String, dynamic>> updateTechnicalService(int id, Map<String, dynamic> data) async {
+    final res = await _dio.put('/technical-services/$id', data: data);
+    return res.data;
+  }
+
+  Future<void> updateTechnicalServiceStatus(int id, String status) async {
+    await _dio.patch('/technical-services/$id/status', data: {'status': status});
+  }
+
+  Future<void> deleteTechnicalService(int id) async {
+    await _dio.delete('/technical-services/$id');
   }
 }

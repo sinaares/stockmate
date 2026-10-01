@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -116,14 +116,16 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
             case 0: break;
             case 1: context.push('/boss/products'); break;
             case 2: context.push('/boss/approvals'); break;
-            case 3: context.push('/boss/employees'); break;
-            case 4: context.push('/boss/settings'); break;
+            case 3: context.push('/boss/technical-service'); break;
+            case 4: context.push('/boss/employees'); break;
+            case 5: context.push('/boss/settings'); break;
           }
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Panel'),
           NavigationDestination(icon: Icon(Icons.inventory_outlined), selectedIcon: Icon(Icons.inventory), label: 'Ürünler'),
           NavigationDestination(icon: Icon(Icons.approval_outlined), selectedIcon: Icon(Icons.approval), label: 'Onaylar'),
+          NavigationDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: 'Servis'),
           NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Personel'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Ayarlar'),
         ],

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
@@ -156,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             TextFormField(
                               controller: _urlCtrl,
                               decoration: const InputDecoration(
-                                labelText: 'Sunucu URL (örn: http://192.168.1.100:3000)',
+                                labelText: 'Sunucu URL (örn: http://192.168.1.100:5000)',
                                 prefixIcon: Icon(Icons.link, color: AppColors.textSecondary),
                               ),
                             ),

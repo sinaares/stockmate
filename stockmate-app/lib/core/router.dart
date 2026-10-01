@@ -13,6 +13,10 @@ import '../features/requests/screens/approvals_screen.dart';
 import '../features/requests/screens/my_requests_screen.dart';
 import '../features/employees/screens/employees_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/technical_service/screens/technical_service_list_screen.dart';
+import '../features/technical_service/screens/technical_service_detail_screen.dart';
+import '../features/technical_service/screens/add_edit_technical_service_screen.dart';
+import '../features/technical_service/models/technical_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
@@ -42,6 +46,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/boss/employees', builder: (_, __) => const EmployeesScreen()),
       GoRoute(path: '/boss/scanner', builder: (_, __) => const ScannerScreen(role: 'boss')),
       GoRoute(path: '/boss/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/boss/technical-service', builder: (_, __) => const TechnicalServiceListScreen()),
+      GoRoute(path: '/boss/technical-service/add', builder: (_, __) => const AddEditTechnicalServiceScreen()),
+      GoRoute(path: '/boss/technical-service/:id',
+        builder: (c, s) => TechnicalServiceDetailScreen(serviceId: int.parse(s.pathParameters['id']!))),
+      GoRoute(path: '/boss/technical-service/:id/edit',
+        builder: (c, s) => AddEditTechnicalServiceScreen(existing: s.extra as TechnicalService?)),
 
       // Employee routes
       GoRoute(path: '/employee/home', builder: (_, __) => const EmployeeHomeScreen()),
