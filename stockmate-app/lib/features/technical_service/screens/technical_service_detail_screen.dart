@@ -21,36 +21,46 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
         actions: [
           serviceAsync.when(
             data: (svc) => PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
+              icon: const Icon(Icons.more_vert_rounded),
+              color: AppColors.surfaceElevated,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [
-                  Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Düzenle'),
+                PopupMenuItem(value: 'edit', child: Row(children: [
+                  Icon(Icons.edit_outlined, size: 18, color: AppColors.accentLight),
+                  const SizedBox(width: 10),
+                  const Text('Düzenle'),
                 ])),
-                const PopupMenuItem(value: 'delete', child: Row(children: [
-                  Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                  SizedBox(width: 8), Text('Sil', style: TextStyle(color: AppColors.error)),
+                PopupMenuItem(value: 'delete', child: Row(children: [
+                  const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                  const SizedBox(width: 10),
+                  const Text('Sil', style: TextStyle(color: AppColors.error)),
                 ])),
               ],
               onSelected: (v) async {
                 if (v == 'edit') {
                   final ok = await context.push<bool>(
-                    '/boss/technical-service/${svc.id}/edit',
-                    extra: svc);
+                    '/boss/technical-service/${svc.id}/edit', extra: svc);
                   if (ok == true) ref.invalidate(technicalServiceByIdProvider(serviceId));
                 } else if (v == 'delete') {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
                       backgroundColor: AppColors.surfaceCard,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       title: const Text('Kaydı Sil'),
-                      content: Text('${svc.customerName} - ${svc.deviceBrand} kaydı silinecek. Emin misiniz?'),
+                      content: Text(
+                        '${svc.customerName} - ${svc.deviceBrand} kaydı silinecek.\nBu işlem geri alınamaz.'),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Vazgeç')),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10))),
                           onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Sil'),
-                        ),
+                          child: const Text('Sil')),
                       ],
                     ),
                   );
@@ -67,7 +77,8 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
         ],
       ),
       body: serviceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.accent)),
         error: (e, _) => Center(child: Text('Hata: $e')),
         data: (svc) => _buildBody(context, ref, svc),
       ),
@@ -77,55 +88,53 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
   Widget _buildBody(BuildContext context, WidgetRef ref, TechnicalService svc) {
     final statusInfo = _statusInfo(svc.status);
     final deviceIcon = _deviceIcon(svc.deviceType);
+    final deviceColor = _deviceColor(svc.deviceType);
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
       children: [
-        // Header card
+        // Header card with gradient
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.accent.withOpacity(0.2), AppColors.surfaceCard],
+              colors: [AppColors.accent.withOpacity(0.15),
+                AppColors.pink.withOpacity(0.05), AppColors.surfaceCard],
               begin: Alignment.topLeft, end: Alignment.bottomRight),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.accent.withOpacity(0.2)),
           ),
-          child: Row(
+          child: Column(
             children: [
-              Container(
-                width: 64, height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(deviceIcon, color: AppColors.accent, size: 32),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${svc.deviceBrand}${svc.deviceModel != null ? ' ${svc.deviceModel}' : ''}',
-                      style: Theme.of(context).textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Container(
+                    width: 64, height: 64,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [deviceColor.withOpacity(0.3), deviceColor.withOpacity(0.1)],
+                        begin: Alignment.topLeft, end: Alignment.bottomRight),
                     ),
-                    Text(_deviceTypeLabel(svc.deviceType),
-                      style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.textSecondary)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusInfo.color.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(statusInfo.label,
-                        style: TextStyle(color: statusInfo.color, fontWeight: FontWeight.w700, fontSize: 13)),
+                    child: Icon(deviceIcon, color: deviceColor, size: 30),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${svc.deviceBrand}${svc.deviceModel != null ? ' ${svc.deviceModel}' : ''}',
+                          style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 4),
+                        Text(_deviceTypeLabel(svc.deviceType),
+                          style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: 10),
+                        _buildStatusBadge(statusInfo),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -134,11 +143,13 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
 
         // Quick status change
         _buildStatusSwitcher(context, ref, svc),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
-        // Details
+        // Customer info
         _SectionCard(
-          title: '👤 Müşteri Bilgileri',
+          icon: Icons.person_rounded,
+          iconColor: AppColors.pink,
+          title: 'Müşteri Bilgileri',
           children: [
             _InfoRow(label: 'Ad Soyad', value: svc.customerName),
             if (svc.customerPhone != null)
@@ -148,7 +159,9 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
         const SizedBox(height: 12),
 
         _SectionCard(
-          title: '📱 Cihaz Bilgileri',
+          icon: Icons.devices_rounded,
+          iconColor: AppColors.accent,
+          title: 'Cihaz Bilgileri',
           children: [
             _InfoRow(label: 'Tür', value: _deviceTypeLabel(svc.deviceType)),
             _InfoRow(label: 'Marka', value: svc.deviceBrand),
@@ -161,29 +174,48 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
         const SizedBox(height: 12),
 
         _SectionCard(
-          title: '🔧 Arıza & Yapılacaklar',
+          icon: Icons.build_rounded,
+          iconColor: AppColors.warning,
+          title: 'Arıza & Değişecek Parçalar',
           children: [
-            _InfoRow(label: 'Arıza Açıklaması', value: svc.faultDescription, multiline: true),
+            _InfoRow(label: 'Arıza', value: svc.faultDescription, multiline: true),
             if (svc.partsToReplace != null && svc.partsToReplace!.isNotEmpty)
-              _InfoRow(label: 'Değişecek Parçalar', value: svc.partsToReplace!, multiline: true),
+              _InfoRow(label: 'Parçalar', value: svc.partsToReplace!, multiline: true),
           ],
         ),
         const SizedBox(height: 12),
 
         _SectionCard(
-          title: '⚙️ Servis Bilgileri',
+          icon: Icons.settings_rounded,
+          iconColor: AppColors.success,
+          title: 'Servis Bilgileri',
           children: [
             if (svc.technicianName != null)
               _InfoRow(label: 'Teknisyen', value: svc.technicianName!),
-            _InfoRow(label: 'Ücret', value: '${svc.price.toStringAsFixed(2)} ₺'),
+            _InfoRow(label: 'Ücret',
+              value: '${svc.price.toStringAsFixed(2)} ₺',
+              valueColor: AppColors.success),
             if (svc.note != null && svc.note!.isNotEmpty)
               _InfoRow(label: 'Not', value: svc.note!, multiline: true),
-            _InfoRow(label: 'Giriş Tarihi', value: _formatDate(svc.createdAt)),
+            _InfoRow(label: 'Giriş', value: _formatDate(svc.createdAt)),
             _InfoRow(label: 'Güncelleme', value: _formatDate(svc.updatedAt)),
           ],
         ),
-        const SizedBox(height: 24),
       ],
+    );
+  }
+
+  Widget _buildStatusBadge(_StatusInfo info) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: info.color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: info.color.withOpacity(0.3)),
+      ),
+      child: Text(info.label,
+        style: TextStyle(color: info.color,
+          fontWeight: FontWeight.w700, fontSize: 12)),
     );
   }
 
@@ -192,7 +224,7 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
       ('waiting',     '⏳ Bekliyor',  AppColors.warning),
       ('in_progress', '🔧 İşlemde',   AppColors.accent),
       ('done',        '✅ Tamam',     AppColors.success),
-      ('delivered',   '📦 Teslim',    AppColors.restock),
+      ('delivered',   '📦 Teslim',    AppColors.success),
       ('cancelled',   '❌ İptal',     AppColors.error),
     ];
 
@@ -200,13 +232,19 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Durum Değiştir', style: Theme.of(context).textTheme.titleSmall),
+          Row(children: [
+            const Icon(Icons.flag_rounded, size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: 8),
+            Text('Durum Değiştir',
+              style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(color: AppColors.textSecondary)),
+          ]),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8, runSpacing: 8,
@@ -220,9 +258,11 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
                     ref.invalidate(technicalServicesProvider);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Durum güncellendi: ${item.$2}'),
+                        content: Text('Durum → ${item.$2}'),
                         backgroundColor: item.$3,
                         behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       ));
                     }
                   } catch (e) {
@@ -236,16 +276,19 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? item.$3 : item.$3.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: item.$3.withOpacity(isSelected ? 1 : 0.4)),
+                    color: isSelected ? item.$3 : item.$3.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: item.$3.withOpacity(isSelected ? 1 : 0.3), width: 1.5),
+                    boxShadow: isSelected ? [BoxShadow(
+                      color: item.$3.withOpacity(0.3), blurRadius: 10)] : null,
                   ),
                   child: Text(item.$2,
                     style: TextStyle(
                       color: isSelected ? Colors.white : item.$3,
-                      fontSize: 12, fontWeight: FontWeight.w600)),
+                      fontSize: 12, fontWeight: FontWeight.w700)),
                 ),
               );
             }).toList(),
@@ -273,6 +316,16 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
     }
   }
 
+  Color _deviceColor(String type) {
+    switch (type) {
+      case 'laptop': return AppColors.accent;
+      case 'phone': return AppColors.pink;
+      case 'tablet': return AppColors.warning;
+      case 'tv': return AppColors.success;
+      default: return AppColors.textSecondary;
+    }
+  }
+
   String _deviceTypeLabel(String type) {
     switch (type) {
       case 'laptop': return 'Laptop / Bilgisayar';
@@ -285,12 +338,12 @@ class TechnicalServiceDetailScreen extends ConsumerWidget {
 
   _StatusInfo _statusInfo(String s) {
     switch (s) {
-      case 'waiting':     return _StatusInfo('⏳ Bekliyor',  AppColors.warning);
-      case 'in_progress': return _StatusInfo('🔧 İşlemde',   AppColors.accent);
-      case 'done':        return _StatusInfo('✅ Tamam',     AppColors.success);
-      case 'delivered':   return _StatusInfo('📦 Teslim',    AppColors.restock);
-      case 'cancelled':   return _StatusInfo('❌ İptal',     AppColors.error);
-      default:            return _StatusInfo(s,               AppColors.textSecondary);
+      case 'waiting':     return _StatusInfo('⏳ Bekliyor', AppColors.warning);
+      case 'in_progress': return _StatusInfo('🔧 İşlemde',  AppColors.accent);
+      case 'done':        return _StatusInfo('✅ Tamam',    AppColors.success);
+      case 'delivered':   return _StatusInfo('📦 Teslim',   AppColors.success);
+      case 'cancelled':   return _StatusInfo('❌ İptal',    AppColors.error);
+      default:            return _StatusInfo(s,              AppColors.textSecondary);
     }
   }
 }
@@ -302,25 +355,38 @@ class _StatusInfo {
 }
 
 class _SectionCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
   final String title;
   final List<Widget> children;
-  const _SectionCard({required this.title, required this.children});
+  const _SectionCard({required this.icon, required this.iconColor,
+    required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall
-            ?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
+          Row(children: [
+            Container(
+              width: 30, height: 30,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: iconColor, size: 16)),
+            const SizedBox(width: 10),
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+          ]),
+          const SizedBox(height: 14),
+          const Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: 14),
           ...children,
         ],
       ),
@@ -332,7 +398,9 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final bool multiline;
-  const _InfoRow({required this.label, required this.value, this.multiline = false});
+  final Color? valueColor;
+  const _InfoRow({required this.label, required this.value,
+    this.multiline = false, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -342,18 +410,25 @@ class _InfoRow extends StatelessWidget {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(value, style: Theme.of(context).textTheme.bodyLarge),
+                Text(label, style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 11,
+                  fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+                const SizedBox(height: 5),
+                Text(value, style: TextStyle(
+                  color: valueColor ?? AppColors.textPrimary,
+                  fontSize: 14, height: 1.5)),
               ],
             )
           : Row(
               children: [
-                Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Text(label, style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 12)),
                 const Spacer(),
                 Flexible(
                   child: Text(value,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: TextStyle(
+                      color: valueColor ?? AppColors.textPrimary,
+                      fontSize: 13, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.end),
                 ),
               ],

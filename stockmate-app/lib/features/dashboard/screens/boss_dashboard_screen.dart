@@ -30,16 +30,20 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 32, height: 32,
+              width: 34, height: 34,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: const LinearGradient(
-                  colors: [AppColors.accent, AppColors.accentDark]),
+                borderRadius: BorderRadius.circular(10),
+                gradient: AppColors.primaryGradient,
+                boxShadow: [BoxShadow(color: AppColors.accent.withOpacity(0.4), blurRadius: 12)],
               ),
               child: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 18),
             ),
-            const SizedBox(width: 8),
-            const Text('StockMate'),
+            const SizedBox(width: 10),
+            ShaderMask(
+              shaderCallback: (b) => AppColors.primaryGradient.createShader(b),
+              child: const Text('StockMate',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+            ),
           ],
         ),
         actions: [
@@ -48,21 +52,21 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
               ? Stack(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.notifications_outlined),
+                      icon: const Icon(Icons.notifications_rounded),
                       onPressed: () => context.push('/boss/approvals'),
                     ),
-                    Positioned(
-                      right: 8, top: 8,
+                    Positioned(right: 8, top: 8,
                       child: Container(
-                        width: 16, height: 16,
+                        width: 17, height: 17,
                         decoration: BoxDecoration(
-                          color: AppColors.error,
+                          gradient: AppColors.primaryGradient,
                           shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: AppColors.errorGlow, blurRadius: 6)],
+                          boxShadow: [BoxShadow(color: AppColors.pinkGlow, blurRadius: 8)],
                         ),
                         child: Center(
                           child: Text('${data['pendingRequests']}',
-                            style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                            style: const TextStyle(fontSize: 9, color: Colors.white,
+                              fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ),
@@ -94,103 +98,154 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.wifi_off, color: AppColors.textSecondary, size: 48),
+                Container(
+                  width: 80, height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.errorGlow, shape: BoxShape.circle),
+                  child: const Icon(Icons.wifi_off_rounded, color: AppColors.error, size: 36)),
                 const SizedBox(height: 16),
-                Text('Sunucuya bağlanılamadı\nCannot reach server',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge),
-                const SizedBox(height: 16),
-                ElevatedButton(
+                Text('Sunucuya bağlanılamadı',
+                  style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text('Bağlantı ayarlarını kontrol edin',
+                  style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
                   onPressed: () => ref.refresh(dashboardStatsProvider),
-                  child: const Text('Tekrar Dene / Retry')),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Tekrar Dene')),
               ],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _navIndex,
-        onDestinationSelected: (i) {
-          setState(() => _navIndex = i);
-          switch (i) {
-            case 0: break;
-            case 1: context.push('/boss/products'); break;
-            case 2: context.push('/boss/approvals'); break;
-            case 3: context.push('/boss/technical-service'); break;
-            case 4: context.push('/boss/employees'); break;
-            case 5: context.push('/boss/settings'); break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Panel'),
-          NavigationDestination(icon: Icon(Icons.inventory_outlined), selectedIcon: Icon(Icons.inventory), label: 'Ürünler'),
-          NavigationDestination(icon: Icon(Icons.approval_outlined), selectedIcon: Icon(Icons.approval), label: 'Onaylar'),
-          NavigationDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: 'Servis'),
-          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Personel'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Ayarlar'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _navIndex,
+          onDestinationSelected: (i) {
+            setState(() => _navIndex = i);
+            switch (i) {
+              case 0: break;
+              case 1: context.push('/boss/products'); break;
+              case 2: context.push('/boss/approvals'); break;
+              case 3: context.push('/boss/technical-service'); break;
+              case 4: context.push('/boss/employees'); break;
+              case 5: context.push('/boss/settings'); break;
+            }
+          },
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.grid_view_rounded), selectedIcon: Icon(Icons.grid_view_rounded), label: 'Panel'),
+            NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2_rounded), label: 'Ürünler'),
+            NavigationDestination(icon: Icon(Icons.task_alt_outlined), selectedIcon: Icon(Icons.task_alt_rounded), label: 'Onaylar'),
+            NavigationDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle_rounded), label: 'Servis'),
+            NavigationDestination(icon: Icon(Icons.group_outlined), selectedIcon: Icon(Icons.group_rounded), label: 'Personel'),
+            NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings_rounded), label: 'Ayarlar'),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildDashboard(BuildContext context, Map<String, dynamic> data, String userName) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       children: [
         // Greeting
-        Text('Merhaba, $userName 👋',
-          style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 4),
-        Text('Genel Bakış / Overview',
-          style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 24),
-
-        // Stat cards
-        GridView.count(
-          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12,
-          childAspectRatio: 1.5,
+        Row(
           children: [
-            _StatCard(
-              label: 'Toplam Ürün\nTotal Products',
-              value: '${data['totalProducts']}',
-              icon: Icons.inventory_2_outlined,
-              color: AppColors.accent,
-            ),
-            _StatCard(
-              label: 'Düşük Stok\nLow Stock',
-              value: '${data['lowStock']}',
-              icon: Icons.warning_amber_outlined,
-              color: AppColors.warning,
-            ),
-            _StatCard(
-              label: 'Bekleyen Onay\nPending Approvals',
-              value: '${data['pendingRequests']}',
-              icon: Icons.pending_actions_outlined,
-              color: data['pendingRequests'] > 0 ? AppColors.error : AppColors.success,
-              onTap: () => context.push('/boss/approvals'),
-            ),
-            _StatCard(
-              label: 'Toplam Satış\nTotal Sold',
-              value: '${data['totalSold']}',
-              icon: Icons.trending_up_rounded,
-              color: AppColors.success,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Merhaba, $userName 👋',
+                    style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 4),
+                  Text('Bugünkü genel bakış',
+                    style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
+
+        // Stat cards 2x2
+        GridView.count(
+          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12,
+          childAspectRatio: 1.4,
+          children: [
+            _StatCard(
+              label: 'Toplam Ürün',
+              value: '${data['totalProducts']}',
+              icon: Icons.inventory_2_rounded,
+              gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+            ),
+            _StatCard(
+              label: 'Düşük Stok',
+              value: '${data['lowStock']}',
+              icon: Icons.warning_amber_rounded,
+              gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+            ),
+            _StatCard(
+              label: 'Bekleyen Onay',
+              value: '${data['pendingRequests']}',
+              icon: Icons.pending_actions_rounded,
+              gradientColors: data['pendingRequests'] > 0
+                ? const [Color(0xFFEC4899), Color(0xFFBE185D)]
+                : const [Color(0xFF34D399), Color(0xFF059669)],
+              onTap: () => context.push('/boss/approvals'),
+            ),
+            _StatCard(
+              label: 'Toplam Satış',
+              value: '${data['totalSold']}',
+              icon: Icons.trending_up_rounded,
+              gradientColors: const [Color(0xFF34D399), Color(0xFF059669)],
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Quick actions
+        _buildQuickActions(context),
+        const SizedBox(height: 24),
 
         // Chart
         _buildChart(context, data['dailyTransactions'] ?? []),
-        const SizedBox(height: 28),
-
-        // Category stats
-        _buildCategoryStats(context, data['categoryStats'] ?? []),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
 
         // Recent activity
         _buildRecentActivity(context, data['recentActivity'] ?? []),
         const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Hızlı Erişim', style: Theme.of(context).textTheme.titleSmall
+          ?.copyWith(color: AppColors.textSecondary)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _QuickAction(icon: Icons.add_box_rounded, label: 'Ürün Ekle',
+              color: AppColors.accent, onTap: () => context.push('/boss/products/add')),
+            const SizedBox(width: 10),
+            _QuickAction(icon: Icons.build_circle_rounded, label: 'Yeni Servis',
+              color: AppColors.pink, onTap: () => context.push('/boss/technical-service/add')),
+            const SizedBox(width: 10),
+            _QuickAction(icon: Icons.qr_code_scanner_rounded, label: 'Barkod',
+              color: AppColors.success, onTap: () => context.push('/boss/scanner')),
+            const SizedBox(width: 10),
+            _QuickAction(icon: Icons.group_add_rounded, label: 'Personel',
+              color: AppColors.warning, onTap: () => context.push('/boss/employees')),
+          ],
+        ),
       ],
     );
   }
@@ -214,32 +269,40 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Haftalık Aktivite / Weekly Activity',
-            style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
           Row(
             children: [
-              _LegendDot(color: AppColors.accent, label: 'Ekleme/Add'),
-              const SizedBox(width: 16),
-              _LegendDot(color: AppColors.error, label: 'Satış/Sell'),
+              Container(
+                width: 4, height: 18,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  gradient: AppColors.primaryGradient),
+              ),
+              const SizedBox(width: 10),
+              Text('Haftalık Aktivite',
+                style: Theme.of(context).textTheme.titleMedium),
+              const Spacer(),
+              Row(children: [
+                _LegendDot(color: AppColors.accent, label: 'Ekle'),
+                const SizedBox(width: 12),
+                _LegendDot(color: AppColors.pink, label: 'Satış'),
+              ]),
             ],
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 160,
+            height: 150,
             child: addData.isEmpty
-              ? Center(child: Text('Henüz veri yok / No data yet',
+              ? Center(child: Text('Henüz veri yok',
                   style: Theme.of(context).textTheme.bodyMedium))
               : LineChart(LineChartData(
                   gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
+                    show: true, drawVerticalLine: false,
                     getDrawingHorizontalLine: (_) =>
                       const FlLine(color: AppColors.border, strokeWidth: 1),
                   ),
@@ -252,59 +315,26 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: addData,
-                      isCurved: true, color: AppColors.accent, barWidth: 3,
+                      spots: addData, isCurved: true, barWidth: 3,
+                      color: AppColors.accent,
                       dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(
-                        show: true, color: AppColors.accentGlow),
+                      belowBarData: BarAreaData(show: true,
+                        gradient: LinearGradient(
+                          colors: [AppColors.accent.withOpacity(0.2), Colors.transparent],
+                          begin: Alignment.topCenter, end: Alignment.bottomCenter)),
                     ),
                     if (sellData.isNotEmpty) LineChartBarData(
-                      spots: sellData,
-                      isCurved: true, color: AppColors.error, barWidth: 3,
+                      spots: sellData, isCurved: true, barWidth: 3,
+                      color: AppColors.pink,
                       dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(
-                        show: true, color: AppColors.errorGlow),
+                      belowBarData: BarAreaData(show: true,
+                        gradient: LinearGradient(
+                          colors: [AppColors.pink.withOpacity(0.2), Colors.transparent],
+                          begin: Alignment.topCenter, end: Alignment.bottomCenter)),
                     ),
                   ],
                 )),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryStats(BuildContext context, List<dynamic> cats) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Kategoriler / Categories', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 16),
-          ...cats.take(5).map((c) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Expanded(child: Text(c['name_tr'] ?? '', style: Theme.of(context).textTheme.bodyLarge)),
-                Text('${c['count']} ürün', style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.accentGlow,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text('${c['total_qty']} adet',
-                    style: const TextStyle(color: AppColors.accentLight, fontSize: 12)),
-                ),
-              ],
-            ),
-          )),
         ],
       ),
     );
@@ -315,31 +345,50 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Son İşlemler / Recent Activity', style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: [
+              Container(
+                width: 4, height: 18,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  gradient: AppColors.primaryGradient),
+              ),
+              const SizedBox(width: 10),
+              Text('Son İşlemler', style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
           const SizedBox(height: 16),
           if (items.isEmpty)
-            Text('Henüz işlem yok / No transactions yet',
-              style: Theme.of(context).textTheme.bodyMedium),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(children: [
+                  const Icon(Icons.history_rounded, color: AppColors.textHint, size: 36),
+                  const SizedBox(height: 8),
+                  Text('Henüz işlem yok', style: Theme.of(context).textTheme.bodyMedium),
+                ]),
+              ),
+            ),
           ...items.map((item) {
             final actionType = item['action_type'] as String;
             final color = _actionColor(actionType);
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 14),
               child: Row(
                 children: [
                   Container(
-                    width: 36, height: 36,
+                    width: 40, height: 40,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(10),
+                      color: color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(_actionIcon(actionType), color: color, size: 18),
+                    child: Icon(_actionIcon(actionType), color: color, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -347,15 +396,25 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(item['product_name'] ?? '',
-                          style: Theme.of(context).textTheme.bodyLarge,
+                          style: Theme.of(context).textTheme.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
                         Text('${item['user_name']} • ${_actionLabel(actionType)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12)),
+                          style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.textSecondary)),
                       ],
                     ),
                   ),
-                  Text('×${item['quantity']}',
-                    style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('×${item['quantity']}',
+                      style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 13)),
+                  ),
                 ],
               ),
             );
@@ -367,10 +426,10 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
 
   Color _actionColor(String t) {
     switch (t) {
-      case 'sell': return AppColors.sell;
-      case 'use': return AppColors.use;
-      case 'restock': case 'add': return AppColors.restock;
-      case 'remove': return AppColors.remove;
+      case 'sell': return AppColors.pink;
+      case 'use': return AppColors.warning;
+      case 'restock': case 'add': return AppColors.success;
+      case 'remove': return AppColors.error;
       default: return AppColors.textSecondary;
     }
   }
@@ -380,18 +439,18 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
       case 'sell': return Icons.point_of_sale_rounded;
       case 'use': return Icons.build_rounded;
       case 'restock': case 'add': return Icons.add_box_rounded;
-      case 'remove': return Icons.remove_circle_outline;
-      default: return Icons.swap_horiz;
+      case 'remove': return Icons.remove_circle_rounded;
+      default: return Icons.swap_horiz_rounded;
     }
   }
 
   String _actionLabel(String t) {
     switch (t) {
-      case 'sell': return 'Satış / Sold';
-      case 'use': return 'Kullanım / Used';
-      case 'restock': return 'Yenileme / Restocked';
-      case 'add': return 'Ekleme / Added';
-      case 'remove': return 'Çıkarma / Removed';
+      case 'sell': return 'Satış';
+      case 'use': return 'Kullanım';
+      case 'restock': return 'Yenileme';
+      case 'add': return 'Ekleme';
+      case 'remove': return 'Çıkarma';
       default: return t;
     }
   }
@@ -401,11 +460,11 @@ class _StatCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  final Color color;
+  final List<Color> gradientColors;
   final VoidCallback? onTap;
 
   const _StatCard({required this.label, required this.value, required this.icon,
-    required this.color, this.onTap});
+    required this.gradientColors, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -415,21 +474,65 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 16)],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: gradientColors[0].withOpacity(0.25)),
+          boxShadow: [BoxShadow(color: gradientColors[0].withOpacity(0.08),
+            blurRadius: 20, offset: const Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 22),
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                gradient: LinearGradient(colors: gradientColors),
+              ),
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
             const Spacer(),
-            Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: color, fontWeight: FontWeight.w700)),
+            Text(value, style: TextStyle(
+              color: gradientColors[0], fontSize: 26,
+              fontWeight: FontWeight.w800, letterSpacing: -0.5)),
             const SizedBox(height: 2),
-            Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 10),
-              maxLines: 2),
+            Text(label, style: const TextStyle(
+              color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _QuickAction({required this.icon, required this.label,
+    required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.2)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 6),
+              Text(label, style: TextStyle(color: color,
+                fontSize: 10, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center),
+            ],
+          ),
         ),
       ),
     );
@@ -445,9 +548,10 @@ class _LegendDot extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(width: 8, height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 11)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
       ],
     );
   }

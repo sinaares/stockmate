@@ -53,125 +53,140 @@ class _TechnicalServiceListScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Teknik Servis'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded),
-            tooltip: 'Yeni kayıt ekle',
-            onPressed: () async {
-              final ok = await context.push<bool>('/boss/technical-service/add');
-              if (ok == true) {
-                ref.invalidate(technicalServicesProvider);
-              }
-            },
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(96),
+          child: Column(
+            children: [
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Müşteri, marka, model ara...',
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    suffixIcon: _search.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _search = '');
+                            })
+                        : null,
+                  ),
+                  onChanged: (v) => setState(() => _search = v),
+                ),
+              ),
+              // Tabs
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                tabs: List.generate(_tabLabels.length, (i) {
+                  final status = _statuses[i];
+                  final info = _statusInfo(status);
+                  return Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (status != null)
+                          Container(
+                            width: 8, height: 8,
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: info.color, shape: BoxShape.circle)),
+                        Text(_tabLabels[i]),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: AppColors.accent,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.accent,
-          tabs: _tabLabels.map((l) => Tab(text: l)).toList(),
         ),
       ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Müşteri, marka, model ara...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _search.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          setState(() => _search = '');
-                        })
-                    : null,
-                filled: true,
-                fillColor: AppColors.surfaceCard,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.accent),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              onChanged: (v) => setState(() => _search = v),
-            ),
+      body: servicesAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.accent)),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.errorGlow, shape: BoxShape.circle),
+                child: const Icon(Icons.wifi_off_rounded,
+                  color: AppColors.error, size: 32)),
+              const SizedBox(height: 16),
+              Text('Bağlantı Hatası',
+                style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Text('$e', style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () => ref.invalidate(technicalServicesProvider),
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Tekrar Dene')),
+            ],
           ),
-          // List
-          Expanded(
-            child: servicesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
-              error: (e, _) => Center(
+        ),
+        data: (services) => services.isEmpty
+            ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.wifi_off, color: AppColors.textSecondary, size: 48),
-                    const SizedBox(height: 12),
-                    Text('Bağlantı hatası\n$e',
-                      textAlign: TextAlign.center,
+                    Container(
+                      width: 80, height: 80,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.accent.withOpacity(0.2),
+                            AppColors.pink.withOpacity(0.1)]),
+                        shape: BoxShape.circle),
+                      child: const Icon(Icons.build_circle_outlined,
+                        color: AppColors.accent, size: 36)),
+                    const SizedBox(height: 16),
+                    Text('Kayıt bulunamadı',
+                      style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 6),
+                    Text('Yeni servis kaydı ekle',
                       style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => ref.invalidate(technicalServicesProvider),
-                      child: const Text('Tekrar Dene'),
-                    ),
                   ],
                 ),
+              )
+            : RefreshIndicator(
+                color: AppColors.accent,
+                backgroundColor: AppColors.surfaceCard,
+                onRefresh: () async => ref.invalidate(technicalServicesProvider),
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                  itemCount: services.length,
+                  itemBuilder: (context, index) =>
+                      _ServiceCard(service: services[index]),
+                ),
               ),
-              data: (services) => services.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.build_circle_outlined,
-                            color: AppColors.textHint, size: 64),
-                          const SizedBox(height: 16),
-                          Text('Kayıt bulunamadı',
-                            style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      color: AppColors.accent,
-                      backgroundColor: AppColors.surfaceCard,
-                      onRefresh: () async => ref.invalidate(technicalServicesProvider),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                        itemCount: services.length,
-                        itemBuilder: (context, index) =>
-                            _ServiceCard(service: services[index]),
-                      ),
-                    ),
-            ),
-          ),
-        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final ok = await context.push<bool>('/boss/technical-service/add');
           if (ok == true) ref.invalidate(technicalServicesProvider);
         },
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Yeni Kayıt'),
-        backgroundColor: AppColors.accent,
-        foregroundColor: Colors.white,
       ),
     );
+  }
+
+  _StatusInfo _statusInfo(String? s) {
+    switch (s) {
+      case 'waiting':     return _StatusInfo('⏳ Bekliyor', AppColors.warning);
+      case 'in_progress': return _StatusInfo('🔧 İşlemde',  AppColors.accent);
+      case 'done':        return _StatusInfo('✅ Tamam',    AppColors.success);
+      case 'delivered':   return _StatusInfo('📦 Teslim',   AppColors.success);
+      case 'cancelled':   return _StatusInfo('❌ İptal',    AppColors.error);
+      default:            return _StatusInfo('Tümü',        AppColors.textSecondary);
+    }
   }
 }
 
@@ -183,6 +198,7 @@ class _ServiceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusInfo = _statusInfo(service.status);
     final deviceIcon = _deviceIcon(service.deviceType);
+    final deviceColor = _deviceColor(service.deviceType);
 
     return GestureDetector(
       onTap: () async {
@@ -194,22 +210,23 @@ class _ServiceCard extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: statusInfo.color.withOpacity(0.3)),
-          boxShadow: [BoxShadow(color: statusInfo.color.withOpacity(0.06), blurRadius: 12)],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Device icon
+              // Device icon with gradient bg
               Container(
-                width: 52, height: 52,
+                width: 54, height: 54,
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    colors: [deviceColor.withOpacity(0.25), deviceColor.withOpacity(0.1)],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight),
                 ),
-                child: Icon(deviceIcon, color: AppColors.accent, size: 26),
+                child: Icon(deviceIcon, color: deviceColor, size: 26),
               ),
               const SizedBox(width: 14),
               // Info
@@ -222,73 +239,64 @@ class _ServiceCard extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             '${service.deviceBrand}${service.deviceModel != null ? ' ${service.deviceModel}' : ''}',
-                            style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                            style: Theme.of(context).textTheme.titleSmall,
                             maxLines: 1, overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: statusInfo.color.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(statusInfo.label,
-                            style: TextStyle(
-                              color: statusInfo.color,
-                              fontSize: 11, fontWeight: FontWeight.w600)),
-                        ),
+                        _StatusChip(label: statusInfo.label, color: statusInfo.color),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text('👤 ${service.customerName}',
-                      style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 5),
+                    Row(children: [
+                      const Icon(Icons.person_outline_rounded,
+                        size: 13, color: AppColors.textHint),
+                      const SizedBox(width: 4),
+                      Text(service.customerName,
+                        style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(fontSize: 12)),
+                    ]),
+                    const SizedBox(height: 3),
                     Text(service.faultDescription,
-                      style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.textSecondary, fontSize: 12),
+                      style: const TextStyle(color: AppColors.textHint, fontSize: 12),
                       maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         if (service.technicianName != null) ...[
-                          const Icon(Icons.engineering, size: 13, color: AppColors.textHint),
+                          const Icon(Icons.engineering_rounded,
+                            size: 12, color: AppColors.accent),
                           const SizedBox(width: 4),
                           Text(service.technicianName!,
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                          const SizedBox(width: 12),
+                            style: const TextStyle(color: AppColors.accent,
+                              fontSize: 11, fontWeight: FontWeight.w600)),
+                          const SizedBox(width: 10),
                         ],
-                        const Icon(Icons.calendar_today, size: 13, color: AppColors.textHint),
-                        const SizedBox(width: 4),
-                        Text(_formatDate(service.createdAt),
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
                         const Spacer(),
                         if (service.price > 0)
-                          Text('${service.price.toStringAsFixed(0)} ₺',
-                            style: const TextStyle(
-                              color: AppColors.success,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.successGlow,
+                              borderRadius: BorderRadius.circular(6)),
+                            child: Text('${service.price.toStringAsFixed(0)} ₺',
+                              style: const TextStyle(color: AppColors.success,
+                                fontWeight: FontWeight.w700, fontSize: 12)),
+                          ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textHint, size: 20),
             ],
           ),
         ),
       ),
     );
-  }
-
-  String _formatDate(String dt) {
-    try {
-      final d = DateTime.parse(dt);
-      return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
-    } catch (_) { return dt; }
   }
 
   IconData _deviceIcon(String type) {
@@ -301,15 +309,45 @@ class _ServiceCard extends ConsumerWidget {
     }
   }
 
+  Color _deviceColor(String type) {
+    switch (type) {
+      case 'laptop': return AppColors.accent;
+      case 'phone': return AppColors.pink;
+      case 'tablet': return AppColors.warning;
+      case 'tv': return AppColors.success;
+      default: return AppColors.textSecondary;
+    }
+  }
+
   _StatusInfo _statusInfo(String s) {
     switch (s) {
-      case 'waiting':     return _StatusInfo('⏳ Bekliyor',  AppColors.warning);
-      case 'in_progress': return _StatusInfo('🔧 İşlemde',   AppColors.accent);
-      case 'done':        return _StatusInfo('✅ Tamam',     AppColors.success);
-      case 'delivered':   return _StatusInfo('📦 Teslim',    AppColors.restock);
-      case 'cancelled':   return _StatusInfo('❌ İptal',     AppColors.error);
-      default:            return _StatusInfo(s,               AppColors.textSecondary);
+      case 'waiting':     return _StatusInfo('⏳ Bekliyor', AppColors.warning);
+      case 'in_progress': return _StatusInfo('🔧 İşlemde',  AppColors.accent);
+      case 'done':        return _StatusInfo('✅ Tamam',    AppColors.success);
+      case 'delivered':   return _StatusInfo('📦 Teslim',   AppColors.success);
+      case 'cancelled':   return _StatusInfo('❌ İptal',    AppColors.error);
+      default:            return _StatusInfo(s,              AppColors.textSecondary);
     }
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _StatusChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(label, style: TextStyle(
+        color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+    );
   }
 }
 

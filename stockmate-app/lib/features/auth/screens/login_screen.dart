@@ -20,12 +20,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   bool _showServerConfig = false;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
 
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
     _animCtrl.forward();
     _urlCtrl.text = ApiService.instance.baseUrl;
   }
@@ -56,152 +59,230 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final auth = ref.watch(authProvider);
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFF0D1520), Color(0xFF0F1923), Color(0xFF131D2B)],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    Container(
-                      width: 90, height: 90,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        gradient: const LinearGradient(
-                          colors: [AppColors.accent, AppColors.accentDark],
-                          begin: Alignment.topLeft, end: Alignment.bottomRight,
+      body: Stack(
+        children: [
+          // Animated background blobs
+          Positioned(top: -100, right: -80,
+            child: _GlowBlob(color: AppColors.accent, size: 340)),
+          Positioned(bottom: -80, left: -100,
+            child: _GlowBlob(color: AppColors.pink, size: 280)),
+          Positioned(top: 200, left: -60,
+            child: _GlowBlob(color: AppColors.accentDark, size: 200)),
+
+          // Content
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo with gradient
+                        Container(
+                          width: 96, height: 96,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(28),
+                            gradient: AppColors.primaryGradient,
+                            boxShadow: [
+                              BoxShadow(color: AppColors.accent.withOpacity(0.5),
+                                blurRadius: 40, spreadRadius: 2),
+                            ],
+                          ),
+                          child: const Icon(Icons.inventory_2_rounded,
+                            color: Colors.white, size: 46),
                         ),
-                        boxShadow: [
-                          BoxShadow(color: AppColors.accentGlow, blurRadius: 30, spreadRadius: 4),
-                        ],
-                      ),
-                      child: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 44),
+                        const SizedBox(height: 28),
+                        ShaderMask(
+                          shaderCallback: (bounds) => AppColors.primaryGradient
+                              .createShader(bounds),
+                          child: Text('StockMate',
+                            style: Theme.of(context).textTheme.headlineLarge
+                              ?.copyWith(color: Colors.white, fontSize: 32,
+                                fontWeight: FontWeight.w800, letterSpacing: -1)),
+                        ),
+                        const SizedBox(height: 6),
+                        Text('Stok & Teknik Servis Yönetimi',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.center),
+                        const SizedBox(height: 48),
+
+                        // Card
+                        Container(
+                          padding: const EdgeInsets.all(28),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceCard,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.4),
+                                blurRadius: 40, offset: const Offset(0, 12)),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Giriş Yap',
+                                style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontSize: 20)),
+                              const SizedBox(height: 6),
+                              Text('Hesabınıza giriş yapın',
+                                style: Theme.of(context).textTheme.bodyMedium),
+                              const SizedBox(height: 28),
+
+                              // Email
+                              TextFormField(
+                                controller: _emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'E-posta',
+                                  prefixIcon: Icon(Icons.alternate_email_rounded),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Password
+                              TextFormField(
+                                controller: _passCtrl,
+                                obscureText: !_showPass,
+                                decoration: InputDecoration(
+                                  labelText: 'Şifre',
+                                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(_showPass
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                      color: AppColors.textSecondary, size: 20),
+                                    onPressed: () => setState(() => _showPass = !_showPass),
+                                  ),
+                                ),
+                                onFieldSubmitted: (_) => _login(),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Server config toggle
+                              TextButton.icon(
+                                onPressed: () => setState(() => _showServerConfig = !_showServerConfig),
+                                icon: Icon(
+                                  _showServerConfig ? Icons.expand_less_rounded : Icons.dns_rounded,
+                                  size: 15),
+                                label: const Text('Sunucu Ayarı'),
+                              ),
+
+                              if (_showServerConfig) ...[
+                                const SizedBox(height: 8),
+                                TextFormField(
+                                  controller: _urlCtrl,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Sunucu URL',
+                                    hintText: 'http://localhost:3000',
+                                    prefixIcon: Icon(Icons.link_rounded),
+                                  ),
+                                ),
+                              ],
+
+                              // Error
+                              if (auth.error != null) ...[
+                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.errorGlow,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: AppColors.error.withOpacity(0.4)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.error_outline_rounded,
+                                        color: AppColors.error, size: 18),
+                                      const SizedBox(width: 10),
+                                      Expanded(child: Text(auth.error!,
+                                        style: const TextStyle(color: AppColors.error, fontSize: 12))),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
+                              const SizedBox(height: 24),
+
+                              // Login Button with gradient
+                              SizedBox(
+                                width: double.infinity, height: 52,
+                                child: auth.isLoading
+                                    ? Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(14),
+                                          gradient: AppColors.primaryGradient),
+                                        child: const Center(
+                                          child: SizedBox(width: 22, height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5, color: Colors.white))),
+                                      )
+                                    : _GradientButton(
+                                        onTap: _login,
+                                        label: 'Giriş Yap',
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text('StockMate © 2024',
+                          style: Theme.of(context).textTheme.bodySmall),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    Text('StockMate', style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      letterSpacing: 1.5, color: AppColors.textPrimary)),
-                    const SizedBox(height: 4),
-                    Text('Stok Yönetim Sistemi / Inventory Management',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center),
-                    const SizedBox(height: 48),
-
-                    // Card
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceCard,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Giriş Yap / Sign In',
-                            style: Theme.of(context).textTheme.titleLarge),
-                          const SizedBox(height: 24),
-
-                          // Email
-                          TextFormField(
-                            controller: _emailCtrl,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              labelText: 'E-posta / Email',
-                              prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textSecondary),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Password
-                          TextFormField(
-                            controller: _passCtrl,
-                            obscureText: !_showPass,
-                            decoration: InputDecoration(
-                              labelText: 'Şifre / Password',
-                              prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
-                              suffixIcon: IconButton(
-                                icon: Icon(_showPass ? Icons.visibility_off : Icons.visibility,
-                                  color: AppColors.textSecondary),
-                                onPressed: () => setState(() => _showPass = !_showPass),
-                              ),
-                            ),
-                            onFieldSubmitted: (_) => _login(),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Server config toggle
-                          TextButton.icon(
-                            onPressed: () => setState(() => _showServerConfig = !_showServerConfig),
-                            icon: Icon(_showServerConfig ? Icons.expand_less : Icons.dns_outlined,
-                              size: 16, color: AppColors.textSecondary),
-                            label: Text('Sunucu Ayarı / Server Settings',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12)),
-                          ),
-
-                          if (_showServerConfig) ...[
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _urlCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Sunucu URL (örn: http://192.168.1.100:5000)',
-                                prefixIcon: Icon(Icons.link, color: AppColors.textSecondary),
-                              ),
-                            ),
-                          ],
-
-                          if (auth.error != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.errorGlow,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.error.withOpacity(0.5)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.error_outline, color: AppColors.error, size: 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(auth.error!,
-                                    style: const TextStyle(color: AppColors.error, fontSize: 12))),
-                                ],
-                              ),
-                            ),
-                          ],
-
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: auth.isLoading ? null : _login,
-                              child: auth.isLoading
-                                ? const SizedBox(
-                                    height: 20, width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Giriş Yap / Sign In'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlowBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _GlowBlob({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size, height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withOpacity(0.07),
+        boxShadow: [BoxShadow(color: color.withOpacity(0.12), blurRadius: 100, spreadRadius: 20)],
+      ),
+    );
+  }
+}
+
+class _GradientButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final String label;
+  const _GradientButton({required this.onTap, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: AppColors.primaryGradient,
+          boxShadow: [BoxShadow(color: AppColors.accent.withOpacity(0.4),
+            blurRadius: 20, offset: const Offset(0, 6))],
+        ),
+        child: Center(
+          child: Text(label, style: const TextStyle(
+            color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700,
+            letterSpacing: 0.3)),
         ),
       ),
     );

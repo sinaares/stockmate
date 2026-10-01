@@ -234,8 +234,18 @@ class _AddEditTechnicalServiceScreenState
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(title, style: const TextStyle(
-      color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600));
+    return Row(
+      children: [
+        Container(width: 3, height: 16,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            gradient: AppColors.primaryGradient)),
+        const SizedBox(width: 10),
+        Text(title, style: const TextStyle(
+          color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700,
+          letterSpacing: 0.3)),
+      ],
+    );
   }
 
   Widget _buildDeviceTypeSelector() {
