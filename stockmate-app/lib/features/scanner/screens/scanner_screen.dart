@@ -1,9 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../../inventory/providers/inventory_provider.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
@@ -75,37 +74,62 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.error.withOpacity(0.5)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.errorBorder),
+          boxShadow: AppColors.elevatedShadow,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off, color: AppColors.error, size: 48),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.errorTint,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.search_off_rounded, color: AppColors.error, size: 28),
+            ),
             const SizedBox(height: 16),
-            Text('Ürün Bulunamadı / Product Not Found',
-              style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text('Barkod: $code', style: Theme.of(context).textTheme.bodyMedium),
+            const Text(
+              'Ürün Bulunamadı',
+              style: TextStyle(
+                color: AppColors.navy,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Barkod: $code',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
             const SizedBox(height: 20),
-            if (widget.role == 'boss')
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Yeni Ürün Ekle / Add New Product'),
+            if (widget.role == 'boss') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Yeni Ürün Olarak Ekle'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push('/boss/products/add');
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  context.push('/boss/products/add');
+                  setState(() => _scanned = false);
+                  _scanner.start();
                 },
+                child: const Text('Tekrar Tara'),
               ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() => _scanned = false);
-                _scanner.start();
-              },
-              child: const Text('Tekrar Tara / Scan Again'),
             ),
           ],
         ),
@@ -124,18 +148,24 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Barkod Tara / Scan Barcode',
-          style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        foregroundColor: Colors.white,
+        title: const Text(
+          'Barkod & QR Tarayıcı',
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
-            icon: Icon(_flashOn ? Icons.flash_on : Icons.flash_off,
-              color: _flashOn ? AppColors.pending : Colors.white),
+            icon: Icon(
+              _flashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+              color: _flashOn ? AppColors.warning : Colors.white,
+            ),
+            tooltip: 'Feneri Aç / Kapat',
             onPressed: () {
               setState(() => _flashOn = !_flashOn);
               _scanner.toggleTorch();
             },
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Stack(
@@ -149,71 +179,69 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             },
           ),
 
-          // Overlay with transparent targeting window
+          // Transparent Targeting Window
           CustomPaint(
             painter: _ScannerOverlayPainter(),
             child: const SizedBox.expand(),
           ),
 
-          // Targeting corners
+          // Modern Viewport Box with Electric Blue Corners
           Center(
             child: Container(
-              width: 240, height: 240,
+              width: 250,
+              height: 250,
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.success, width: 3),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary, width: 2.5),
               ),
             ),
           ),
 
-          // Bottom: manual entry
+          // Manual Entry Bottom Bar in Clean White Surface
           Positioned(
-            bottom: 0, left: 0, right: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.95), Colors.transparent],
-                ),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(color: Color(0x22000000), blurRadius: 20, offset: Offset(0, -4)),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('veya manuel gir / or enter manually',
-                    style: const TextStyle(color: Colors.white60, fontSize: 13)),
-                  const SizedBox(height: 12),
+                  const Text(
+                    'Manuel Barkod Girişi',
+                    style: TextStyle(color: AppColors.navy, fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _manualCtrl,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Barkod veya seri no / Barcode or serial',
-                            hintStyle: const TextStyle(color: Colors.white38),
-                            filled: true,
-                            fillColor: Colors.white12,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: const InputDecoration(
+                            hintText: 'Barkod veya seri no girin...',
+                            prefixIcon: Icon(Icons.keyboard_outlined, size: 20),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           ),
                           onSubmitted: (_) => _manualSearch(),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: _manualSearch,
-                        child: Container(
-                          width: 50, height: 50,
-                          decoration: BoxDecoration(
-                            color: AppColors.accent,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.search, color: Colors.white),
+                      const SizedBox(width: 10),
+                      IconButton.filled(
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.all(12),
                         ),
+                        onPressed: _manualSearch,
+                        icon: const Icon(Icons.search_rounded, color: Colors.white, size: 22),
                       ),
                     ],
                   ),
@@ -222,12 +250,12 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             ),
           ),
 
-          // Scanning indicator
           if (_scanned)
             Container(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withOpacity(0.6),
               child: const Center(
-                child: CircularProgressIndicator(color: AppColors.success)),
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
             ),
         ],
       ),
@@ -242,8 +270,11 @@ class _ProductActionSheet extends ConsumerStatefulWidget {
   final VoidCallback onClose;
 
   const _ProductActionSheet({
-    required this.product, required this.role,
-    this.presetAction, required this.onClose});
+    required this.product,
+    required this.role,
+    this.presetAction,
+    required this.onClose,
+  });
 
   @override
   ConsumerState<_ProductActionSheet> createState() => _ProductActionSheetState();
@@ -258,7 +289,14 @@ class _ProductActionSheetState extends ConsumerState<_ProductActionSheet> {
   @override
   void initState() {
     super.initState();
-    _selectedAction = widget.presetAction;
+    _selectedAction = widget.presetAction ?? 'sell';
+  }
+
+  void _adjustQty(int delta) {
+    final current = int.tryParse(_qtyCtrl.text) ?? 1;
+    final next = (current + delta).clamp(1, 9999);
+    _qtyCtrl.text = '$next';
+    setState(() {});
   }
 
   Future<void> _submit() async {
@@ -277,19 +315,25 @@ class _ProductActionSheetState extends ConsumerState<_ProductActionSheet> {
       ref.invalidate(inventoryProvider);
       if (mounted) {
         widget.onClose();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(widget.role == 'boss'
-            ? 'İşlem tamamlandı / Done!'
-            : 'İstek gönderildi, onay bekleniyor / Request sent, awaiting approval'),
-          backgroundColor: AppColors.success,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.role == 'boss'
+                  ? 'Stok hareketi başarıyla işlendi'
+                  : 'Onay isteğiniz yöneticiye iletildi',
+            ),
+            backgroundColor: AppColors.teal,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hata / Error: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
         setState(() => _isLoading = false);
       }
     }
@@ -298,82 +342,136 @@ class _ProductActionSheetState extends ConsumerState<_ProductActionSheet> {
   @override
   Widget build(BuildContext context) {
     final qty = widget.product['quantity'] as int;
-    final isLow = qty <= (widget.product['min_stock'] as int? ?? 5);
+    final minStock = widget.product['min_stock'] as int? ?? 5;
+    final isLow = qty <= minStock;
 
     return Container(
-      margin: const EdgeInsets.all(12),
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 24),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.elevatedShadow,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product info
+          // Product Info Header
           Row(
             children: [
               Container(
-                width: 50, height: 50,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.accentGlow,
-                  borderRadius: BorderRadius.circular(14),
+                  color: isLow ? AppColors.warningTint : AppColors.tealTint,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.inventory_2, color: AppColors.accent, size: 28),
+                child: Icon(
+                  isLow ? Icons.warning_amber_rounded : Icons.inventory_2_rounded,
+                  color: isLow ? AppColors.warning : AppColors.teal,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.product['name'] ?? '',
-                      style: Theme.of(context).textTheme.titleLarge, maxLines: 2),
-                    Text(widget.product['category_tr'] ?? widget.product['category_en'] ?? '',
-                      style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      widget.product['name'] ?? '',
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.product['category_tr'] ?? widget.product['category_en'] ?? 'Genel Kategori',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: isLow ? AppColors.errorGlow : AppColors.successGlow,
+                  color: isLow ? AppColors.warningTint : AppColors.tealTint,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isLow ? AppColors.warningBorder : AppColors.teal.withOpacity(0.3),
+                  ),
                 ),
-                child: Text('$qty ${widget.product['unit']}',
+                child: Text(
+                  '$qty ${widget.product['unit']}',
                   style: TextStyle(
-                    color: isLow ? AppColors.error : AppColors.success,
-                    fontWeight: FontWeight.w700, fontSize: 14)),
+                    color: isLow ? AppColors.warning : AppColors.teal,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 20),
 
-          // Action selection
-          Text('İşlem Seç / Select Action', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8, runSpacing: 8,
-            children: [
-              _ActionChip('sell', 'Sat / Sell', Icons.point_of_sale_rounded, AppColors.sell),
-              _ActionChip('use', 'Kullan / Use', Icons.build_rounded, AppColors.use),
-              _ActionChip('restock', 'Yenile / Restock', Icons.add_box_rounded, AppColors.restock),
-            ],
+          // Action Type Selection Chips
+          const Text(
+            'İşlem Türü Seçin',
+            style: TextStyle(color: AppColors.navy, fontSize: 13, fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 16),
-
-          // Quantity
+          const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _qtyCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Miktar / Quantity',
-                    prefixIcon: Icon(Icons.numbers, color: AppColors.textSecondary),
-                  ),
+              Expanded(child: _ActionChip('sell', 'Satış Yap', Icons.point_of_sale_rounded, AppColors.error)),
+              const SizedBox(width: 8),
+              Expanded(child: _ActionChip('use', 'Kullanım', Icons.build_rounded, AppColors.warning)),
+              const SizedBox(width: 8),
+              Expanded(child: _ActionChip('restock', 'Stok Ekle', Icons.add_box_rounded, AppColors.teal)),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // Quantity Stepper & Note
+          Row(
+            children: [
+              // Quantity stepper
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_rounded, size: 18),
+                      onPressed: () => _adjustQty(-1),
+                    ),
+                    SizedBox(
+                      width: 44,
+                      child: TextField(
+                        controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.navy),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      onPressed: () => _adjustQty(1),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
@@ -381,56 +479,65 @@ class _ProductActionSheetState extends ConsumerState<_ProductActionSheet> {
                 child: TextField(
                   controller: _noteCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Not / Note (opsiyonel)',
-                    prefixIcon: Icon(Icons.note_outlined, color: AppColors.textSecondary),
+                    labelText: 'Not (İsteğe bağlı)',
+                    hintText: 'Açıklama...',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Info for employees
           if (widget.role == 'employee')
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.warningGlow,
+                color: AppColors.primaryTint,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.info_outline, color: AppColors.warning, size: 18),
+                  Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 18),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text('Bu istek yöneticinizin onayına gönderilecek.\nThis request will be sent for manager approval.',
-                      style: TextStyle(color: AppColors.warning, fontSize: 11)),
+                    child: Text(
+                      'Bu işlem yöneticinizin onayına iletilecektir.',
+                      style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
                   ),
                 ],
               ),
             ),
+          const SizedBox(height: 18),
 
-          const SizedBox(height: 16),
-
+          // Submit & Cancel
           Row(
             children: [
               Expanded(
-                child: TextButton(
+                child: OutlinedButton(
                   onPressed: widget.onClose,
-                  child: const Text('İptal / Cancel'),
+                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13)),
+                  child: const Text('Vazgeç', style: TextStyle(color: AppColors.textSecondary)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13)),
                   onPressed: _isLoading || _selectedAction == null ? null : _submit,
                   child: _isLoading
-                    ? const SizedBox(width: 20, height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(widget.role == 'boss'
-                      ? 'İşlemi Uygula / Apply'
-                      : 'Onay İste / Request Approval'),
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(
+                          widget.role == 'boss' ? 'İşlemi Onayla' : 'Onaya Gönder',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
               ),
             ],
@@ -445,25 +552,29 @@ class _ProductActionSheetState extends ConsumerState<_ProductActionSheet> {
     return GestureDetector(
       onTap: () => setState(() => _selectedAction = action),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : AppColors.surfaceCard,
+          color: isSelected ? color.withOpacity(0.12) : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : AppColors.border,
-            width: isSelected ? 2 : 1,
+            width: isSelected ? 1.8 : 1.0,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
           children: [
-            Icon(icon, color: isSelected ? color : AppColors.textSecondary, size: 16),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(
-              color: isSelected ? color : AppColors.textSecondary,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 13)),
+            Icon(icon, color: isSelected ? color : AppColors.textSecondary, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? color : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 11,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -476,15 +587,14 @@ class _ScannerOverlayPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = Colors.black.withOpacity(0.65);
     final center = Offset(size.width / 2, size.height / 2);
-    const scanSize = 240.0;
+    const scanSize = 250.0;
     final scanRect = Rect.fromCenter(center: center, width: scanSize, height: scanSize);
 
-    // Draw dark overlay with transparent hole
     canvas.drawPath(
       Path.combine(
         PathOperation.difference,
         Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
-        Path()..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(16))),
+        Path()..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(20))),
       ),
       paint,
     );

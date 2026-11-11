@@ -1,27 +1,28 @@
 {
-    "name":  "stockmate-backend",
-    "version":  "1.0.0",
-    "description":  "StockMate inventory management backend",
-    "main":  "index.js",
-    "scripts":  {
-                    "start": "node index.js",
-                    "dev": "node --watch index.js",
-                    "test":  "echo \"Error: no test specified\" && exit 1"
-                },
-    "keywords":  [
-
-                 ],
-    "author":  "",
-    "license":  "ISC",
-    "type":  "commonjs",
-    "dependencies":  {
-                         "bcryptjs":  "^3.0.3",
-                         "cors":  "^2.8.6",
-                         "dotenv":  "^17.4.2",
-                         "express":  "^5.2.1",
-                         "jsonwebtoken":  "^9.0.3"
-                     },
-    "optionalDependencies":  {
-                                 "better-sqlite3":  "^13.0.3"
-                             }
+    "name": "stockmate-backend",
+    "version": "1.0.0",
+    "description": "StockMate inventory management backend",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "node --watch index.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "@prisma/client": "^7.10.0",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "pg": "^8.23.1",
+        "puppeteer-core": "^25.12.0"
+    },
+    "optionalDependencies": {
+        "better-sqlite3": "^13.0.3"
+    }
 }

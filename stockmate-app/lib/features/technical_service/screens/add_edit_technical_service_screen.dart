@@ -38,18 +38,18 @@ class _AddEditTechnicalServiceScreenState
 
   static const _deviceTypes = [
     ('phone',  'Telefon',       Icons.smartphone_rounded),
-    ('laptop', 'Laptop',        Icons.laptop_rounded),
-    ('tablet', 'Tablet',        Icons.tablet_rounded),
+    ('laptop', 'Laptop',        Icons.laptop_chromebook_rounded),
+    ('tablet', 'Tablet',        Icons.tablet_mac_rounded),
     ('tv',     'Televizyon',    Icons.tv_rounded),
     ('other',  'Diğer',         Icons.devices_other_rounded),
   ];
 
   static const _statuses = [
-    ('waiting',     '⏳ Bekliyor'),
-    ('in_progress', '🔧 İşlemde'),
-    ('done',        '✅ Tamam'),
-    ('delivered',   '📦 Teslim'),
-    ('cancelled',   '❌ İptal'),
+    ('waiting',     'Bekliyor'),
+    ('in_progress', 'İşlemde'),
+    ('done',        'Tamamlandı'),
+    ('delivered',   'Teslim Edildi'),
+    ('cancelled',   'İptal Edildi'),
   ];
 
   @override
@@ -76,7 +76,7 @@ class _AddEditTechnicalServiceScreenState
   Future<void> _loadEmployees() async {
     try {
       final data = await ApiService.instance.getEmployees();
-      setState(() => _employees = data);
+      if (mounted) setState(() => _employees = data);
     } catch (_) {}
   }
 
@@ -137,233 +137,284 @@ class _AddEditTechnicalServiceScreenState
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(isEdit ? 'Kaydı Düzenle' : 'Yeni Servis Kaydı'),
-        actions: [
-          TextButton.icon(
-            onPressed: _loading ? null : _save,
-            icon: _loading
-                ? const SizedBox(width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
-                : const Icon(Icons.save_rounded, size: 18),
-            label: const Text('Kaydet'),
-          ),
-        ],
+        title: Text(isEdit ? 'Servis Kaydını Düzenle' : 'Yeni Teknik Servis Kaydı'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // Device Type selector
-            _buildSectionHeader('📱 Cihaz Türü'),
-            const SizedBox(height: 10),
-            _buildDeviceTypeSelector(),
-            const SizedBox(height: 20),
+            // Device Type Selection Section
+            _buildSection(
+              title: 'Cihaz Türü',
+              icon: Icons.devices_rounded,
+              children: [
+                _buildDeviceTypeSelector(),
+              ],
+            ),
+            const SizedBox(height: 18),
 
-            // Customer info
-            _buildSectionHeader('👤 Müşteri Bilgileri'),
-            const SizedBox(height: 10),
-            _buildField(_customerNameCtrl, 'Ad Soyad *', Icons.person_outline,
-              validator: (v) => v == null || v.isEmpty ? 'Zorunlu alan' : null),
-            const SizedBox(height: 12),
-            _buildField(_customerPhoneCtrl, 'Telefon', Icons.phone_outlined,
-              keyboardType: TextInputType.phone),
-            const SizedBox(height: 20),
+            // Customer Info Section
+            _buildSection(
+              title: 'Müşteri Bilgileri',
+              icon: Icons.person_outline_rounded,
+              children: [
+                TextFormField(
+                  controller: _customerNameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Müşteri Adı Soyadı *',
+                    hintText: 'Örn: Ahmet Yılmaz',
+                    prefixIcon: Icon(Icons.person_rounded),
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Müşteri adı zorunludur' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _customerPhoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'İletişim Numarası',
+                    hintText: '05XX XXX XX XX',
+                    prefixIcon: Icon(Icons.phone_rounded),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
 
-            // Device info
-            _buildSectionHeader('🔧 Cihaz Bilgileri'),
-            const SizedBox(height: 10),
-            _buildField(_deviceBrandCtrl, 'Marka *', Icons.label_outline,
-              validator: (v) => v == null || v.isEmpty ? 'Zorunlu alan' : null),
-            const SizedBox(height: 12),
-            _buildField(_deviceModelCtrl, 'Model', Icons.memory_outlined),
-            const SizedBox(height: 12),
-            _buildField(_serialNoCtrl, 'Seri No', Icons.qr_code_outlined),
-            const SizedBox(height: 20),
+            // Device Info Section
+            _buildSection(
+              title: 'Cihaz Detayları',
+              icon: Icons.build_outlined,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _deviceBrandCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Marka *',
+                          hintText: 'Apple, Samsung vb.',
+                          prefixIcon: Icon(Icons.label_outline),
+                        ),
+                        validator: (v) => v == null || v.trim().isEmpty ? 'Marka zorunludur' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _deviceModelCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Model',
+                          hintText: 'iPhone 13, ThinkPad vb.',
+                          prefixIcon: Icon(Icons.memory_rounded),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _serialNoCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Seri Numarası / IMEI',
+                    hintText: 'SN-9823412',
+                    prefixIcon: Icon(Icons.tag_rounded),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
 
-            // Fault & parts
-            _buildSectionHeader('⚠️ Arıza & Değişecek Parçalar'),
-            const SizedBox(height: 10),
-            _buildField(_faultDescCtrl, 'Arıza Açıklaması *', Icons.bug_report_outlined,
-              maxLines: 3,
-              validator: (v) => v == null || v.isEmpty ? 'Zorunlu alan' : null),
-            const SizedBox(height: 12),
-            _buildField(_partsCtrl, 'Değişecek Parçalar', Icons.build_circle_outlined,
-              maxLines: 3,
-              hint: 'Örn: Ekran, batarya, şarj portu...'),
-            const SizedBox(height: 20),
+            // Fault & Parts Section
+            _buildSection(
+              title: 'Arıza & Yedek Parça',
+              icon: Icons.warning_amber_rounded,
+              children: [
+                TextFormField(
+                  controller: _faultDescCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Bildirilen Arıza / Şikayet *',
+                    hintText: 'Cihaz açılmıyor, ekranda kırık var...',
+                    prefixIcon: Icon(Icons.error_outline_rounded),
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Arıza açıklaması zorunludur' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _partsCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Değişecek Parçalar',
+                    hintText: 'Örn: Batarya, ekran paneli...',
+                    prefixIcon: Icon(Icons.build_circle_outlined),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
 
-            // Service info
-            _buildSectionHeader('⚙️ Servis Bilgileri'),
-            const SizedBox(height: 10),
-            _buildStatusDropdown(),
-            const SizedBox(height: 12),
-            _buildTechnicianDropdown(),
-            const SizedBox(height: 12),
-            _buildField(_priceCtrl, 'Ücret (₺)', Icons.payments_outlined,
-              keyboardType: TextInputType.number),
-            const SizedBox(height: 12),
-            _buildField(_noteCtrl, 'Not', Icons.notes_outlined, maxLines: 2),
-            const SizedBox(height: 32),
+            // Service & Financials Section
+            _buildSection(
+              title: 'Servis Durumu & Ücretlendirme',
+              icon: Icons.settings_outlined,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: _status,
+                  dropdownColor: Colors.white,
+                  decoration: const InputDecoration(
+                    labelText: 'Servis Durumu',
+                    prefixIcon: Icon(Icons.published_with_changes_rounded),
+                  ),
+                  items: _statuses
+                      .map((s) => DropdownMenuItem(value: s.$1, child: Text(s.$2, style: const TextStyle(color: AppColors.textPrimary))))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) setState(() => _status = v);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int?>(
+                  value: _technicianId,
+                  dropdownColor: Colors.white,
+                  decoration: const InputDecoration(
+                    labelText: 'Atanan Teknisyen',
+                    prefixIcon: Icon(Icons.engineering_outlined),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(value: null, child: Text('— Henüz Atanmadı —')),
+                    ..._employees.map<DropdownMenuItem<int?>>((e) => DropdownMenuItem<int?>(
+                          value: e['id'] as int,
+                          child: Text('${e['name']}', style: const TextStyle(color: AppColors.textPrimary)),
+                        )),
+                  ],
+                  onChanged: (v) => setState(() => _technicianId = v),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _priceCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Tahmini / Kesinleşen Servis Ücreti (₺)',
+                    hintText: '0.00',
+                    prefixIcon: Icon(Icons.payments_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _noteCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Dahili Not',
+                    hintText: 'Müşteriye bilgi verildi vb.',
+                    prefixIcon: Icon(Icons.notes_rounded),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
 
-            // Save button
+            // Save CTA Button
             SizedBox(
-              width: double.infinity, height: 52,
+              width: double.infinity,
+              height: 48,
               child: ElevatedButton.icon(
                 onPressed: _loading ? null : _save,
                 icon: _loading
-                    ? const SizedBox(width: 18, height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.save_rounded),
-                label: Text(isEdit ? 'Güncelle' : 'Kayıt Oluştur',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.save_rounded, size: 20),
+                label: Text(
+                  isEdit ? 'Servis Kaydını Güncelle' : 'Servis İş Emrini Oluştur',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Row(
+  Widget _buildSection({required String title, required IconData icon, required List<Widget> children}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(width: 3, height: 16,
+        Row(
+          children: [
+            Icon(icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            gradient: AppColors.primaryGradient)),
-        const SizedBox(width: 10),
-        Text(title, style: const TextStyle(
-          color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700,
-          letterSpacing: 0.3)),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+        ),
       ],
     );
   }
 
   Widget _buildDeviceTypeSelector() {
     return Wrap(
-      spacing: 8, runSpacing: 8,
+      spacing: 8,
+      runSpacing: 8,
       children: _deviceTypes.map(((String v, String label, IconData icon) item) {
         final isSelected = _deviceType == item.$1;
         return GestureDetector(
           onTap: () => setState(() => _deviceType = item.$1),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.accent : AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(12),
+              color: isSelected ? AppColors.primary : AppColors.surfaceMuted,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: isSelected ? AppColors.accent : AppColors.border, width: 1.5),
+                color: isSelected ? AppColors.primary : AppColors.border,
+                width: isSelected ? 1.4 : 1.0,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(item.$3, size: 18,
-                  color: isSelected ? Colors.white : AppColors.textSecondary),
+                Icon(item.$3, size: 16, color: isSelected ? Colors.white : AppColors.textSecondary),
                 const SizedBox(width: 6),
-                Text(item.$2, style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
-                  fontSize: 13)),
+                Text(
+                  item.$2,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildField(
-    TextEditingController ctrl,
-    String label,
-    IconData icon, {
-    int maxLines = 1,
-    String? hint,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: ctrl,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, size: 20),
-        filled: true,
-        fillColor: AppColors.surfaceCard,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-    );
-  }
-
-  Widget _buildStatusDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _status,
-      decoration: InputDecoration(
-        labelText: 'Durum',
-        prefixIcon: const Icon(Icons.flag_outlined, size: 20),
-        filled: true,
-        fillColor: AppColors.surfaceCard,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      dropdownColor: AppColors.surfaceCard,
-      items: _statuses.map(((String v, String label) item) =>
-        DropdownMenuItem(value: item.$1, child: Text(item.$2))).toList(),
-      onChanged: (v) { if (v != null) setState(() => _status = v); },
-    );
-  }
-
-  Widget _buildTechnicianDropdown() {
-    return DropdownButtonFormField<int?>(
-      value: _technicianId,
-      decoration: InputDecoration(
-        labelText: 'Teknisyen',
-        prefixIcon: const Icon(Icons.engineering_outlined, size: 20),
-        filled: true,
-        fillColor: AppColors.surfaceCard,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      dropdownColor: AppColors.surfaceCard,
-      items: [
-        const DropdownMenuItem<int?>(value: null, child: Text('— Atanmadı —')),
-        ..._employees.map<DropdownMenuItem<int?>>((e) =>
-          DropdownMenuItem<int?>(
-            value: e['id'] as int,
-            child: Text('${e['name']}'),
-          )),
-      ],
-      onChanged: (v) => setState(() => _technicianId = v),
     );
   }
 }

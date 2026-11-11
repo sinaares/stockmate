@@ -1,4 +1,4 @@
-﻿const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
 function authenticate(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -9,7 +9,8 @@ function authenticate(req, res, next) {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (e) {
-    res.status(401).json({ error: 'Invalid token' });
+    console.error('JWT verification failed:', e.message, 'Token received:', token ? token.substring(0, 15) + '...' : 'none');
+    res.status(401).json({ error: 'Invalid token', details: e.message });
   }
 }
 

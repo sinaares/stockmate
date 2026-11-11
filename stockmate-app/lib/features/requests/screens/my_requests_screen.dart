@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/services/api_service.dart';
 import '../models/request_model.dart';
@@ -17,22 +17,52 @@ class MyRequestsScreen extends ConsumerWidget {
     final requests = ref.watch(myRequestsListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('İsteklerim / My Requests')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('İşlem İsteklerim'),
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(myRequestsListProvider.future),
-        color: AppColors.accent,
+        color: AppColors.primary,
+        backgroundColor: Colors.white,
         child: requests.when(
           data: (reqs) => reqs.isEmpty
-            ? Center(child: Text('Henüz istek yok / No requests yet',
-                style: Theme.of(context).textTheme.bodyLarge))
-            : ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: reqs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, i) => _MyRequestTile(request: reqs[i]),
-              ),
-          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
-          error: (e, _) => Center(child: Text('$e')),
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceMuted,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.history_toggle_off_rounded, color: AppColors.textHint, size: 36),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Henüz bir istek oluşturmadınız',
+                        style: TextStyle(color: AppColors.navy, fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Barkod tarayarak yaptığınız işlemler burada listelenir.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: reqs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) => _MyRequestTile(request: reqs[i]),
+                ),
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          error: (e, _) => Center(
+            child: Text('$e', style: const TextStyle(color: AppColors.error)),
+          ),
         ),
       ),
     );
@@ -44,55 +74,91 @@ class _MyRequestTile extends StatelessWidget {
   const _MyRequestTile({required this.request});
 
   Color get _statusColor {
-    if (request.isPending) return AppColors.pending;
-    if (request.isApproved) return AppColors.success;
+    if (request.isPending) return AppColors.warning;
+    if (request.isApproved) return AppColors.teal;
     return AppColors.error;
+  }
+
+  String get _statusLabel {
+    if (request.isPending) return 'Onay Bekliyor';
+    if (request.isApproved) return 'Onaylandı';
+    return 'Reddedildi';
+  }
+
+  IconData get _statusIcon {
+    if (request.isPending) return Icons.schedule_rounded;
+    if (request.isApproved) return Icons.check_circle_rounded;
+    return Icons.cancel_rounded;
   }
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = _statusColor;
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _statusColor.withOpacity(0.3)),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.cardShadow,
       ),
       child: Row(
         children: [
           Container(
-            width: 40, height: 40,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: _statusColor.withOpacity(0.15),
+              color: statusColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              request.isPending ? Icons.schedule
-                : request.isApproved ? Icons.check_circle : Icons.cancel,
-              color: _statusColor, size: 20),
+            child: Icon(_statusIcon, color: statusColor, size: 22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(request.productName, style: Theme.of(context).textTheme.bodyLarge,
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text('${request.actionType} • ×${request.quantity} ${request.unit}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12)),
-                if (request.isRejected && request.rejectReason != null)
-                  Text('Red: ${request.rejectReason}',
-                    style: const TextStyle(color: AppColors.error, fontSize: 11)),
+                Text(
+                  request.productName,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${request.actionType.toUpperCase()} • Miktar: ${request.quantity} ${request.unit}',
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+                if (request.isRejected && request.rejectReason != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'Red Nedeni: ${request.rejectReason}',
+                    style: const TextStyle(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                ],
               ],
             ),
           ),
-          Chip(
-            label: Text(
-              request.isPending ? 'Bekliyor' : request.isApproved ? 'Onaylandı' : 'Reddedildi',
-              style: TextStyle(color: _statusColor, fontSize: 11)),
-            side: BorderSide(color: _statusColor.withOpacity(0.4)),
-            backgroundColor: _statusColor.withOpacity(0.1),
-            padding: EdgeInsets.zero,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: statusColor.withOpacity(0.3)),
+            ),
+            child: Text(
+              _statusLabel,
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),

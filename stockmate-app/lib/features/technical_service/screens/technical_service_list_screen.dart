@@ -51,19 +51,20 @@ class _TechnicalServiceListScreenState
     final servicesAsync = ref.watch(technicalServicesProvider(filters));
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Teknik Servis'),
+        title: const Text('Teknik Servis Yönetimi'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(96),
+          preferredSize: const Size.fromHeight(100),
           child: Column(
             children: [
-              // Search bar
+              // Search input
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
-                    hintText: 'Müşteri, marka, model ara...',
+                    hintText: 'Müşteri, marka, model veya arıza ara...',
                     prefixIcon: const Icon(Icons.search_rounded, size: 20),
                     suffixIcon: _search.isNotEmpty
                         ? IconButton(
@@ -71,13 +72,15 @@ class _TechnicalServiceListScreenState
                             onPressed: () {
                               _searchCtrl.clear();
                               setState(() => _search = '');
-                            })
+                            },
+                          )
                         : null,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   ),
                   onChanged: (v) => setState(() => _search = v),
                 ),
               ),
-              // Tabs
+              // Filter Tabs
               TabBar(
                 controller: _tabController,
                 isScrollable: true,
@@ -91,10 +94,11 @@ class _TechnicalServiceListScreenState
                       children: [
                         if (status != null)
                           Container(
-                            width: 8, height: 8,
+                            width: 7,
+                            height: 7,
                             margin: const EdgeInsets.only(right: 6),
-                            decoration: BoxDecoration(
-                              color: info.color, shape: BoxShape.circle)),
+                            decoration: BoxDecoration(color: info.color, shape: BoxShape.circle),
+                          ),
                         Text(_tabLabels[i]),
                       ],
                     ),
@@ -107,29 +111,38 @@ class _TechnicalServiceListScreenState
       ),
       body: servicesAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.accent)),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
         error: (e, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 72, height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.errorGlow, shape: BoxShape.circle),
-                child: const Icon(Icons.wifi_off_rounded,
-                  color: AppColors.error, size: 32)),
-              const SizedBox(height: 16),
-              Text('Bağlantı Hatası',
-                style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text('$e', style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () => ref.invalidate(technicalServicesProvider),
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Tekrar Dene')),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.errorTint,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.wifi_off_rounded, color: AppColors.error, size: 30),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Bağlantı Hatası',
+                  style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+                const SizedBox(height: 6),
+                Text('$e', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12), textAlign: TextAlign.center),
+                const SizedBox(height: 18),
+                ElevatedButton.icon(
+                  onPressed: () => ref.invalidate(technicalServicesProvider),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Tekrar Dene'),
+                ),
+              ],
+            ),
           ),
         ),
         data: (services) => services.isEmpty
@@ -138,32 +151,36 @@ class _TechnicalServiceListScreenState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 80, height: 80,
+                      width: 72,
+                      height: 72,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.accent.withOpacity(0.2),
-                            AppColors.pink.withOpacity(0.1)]),
-                        shape: BoxShape.circle),
-                      child: const Icon(Icons.build_circle_outlined,
-                        color: AppColors.accent, size: 36)),
+                        color: AppColors.surfaceMuted,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.build_circle_outlined, color: AppColors.textHint, size: 36),
+                    ),
                     const SizedBox(height: 16),
-                    Text('Kayıt bulunamadı',
-                      style: Theme.of(context).textTheme.titleMedium),
+                    const Text(
+                      'Teknik servis kaydı bulunamadı',
+                      style: TextStyle(color: AppColors.navy, fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
                     const SizedBox(height: 6),
-                    Text('Yeni servis kaydı ekle',
-                      style: Theme.of(context).textTheme.bodyMedium),
+                    const Text(
+                      'Seçili filtreye ait cihaz veya iş emri yok.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
                   ],
                 ),
               )
             : RefreshIndicator(
-                color: AppColors.accent,
-                backgroundColor: AppColors.surfaceCard,
+                color: AppColors.primary,
+                backgroundColor: Colors.white,
                 onRefresh: () async => ref.invalidate(technicalServicesProvider),
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                   itemCount: services.length,
-                  itemBuilder: (context, index) =>
-                      _ServiceCard(service: services[index]),
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) => _ServiceCard(service: services[index]),
                 ),
               ),
       ),
@@ -173,19 +190,19 @@ class _TechnicalServiceListScreenState
           if (ok == true) ref.invalidate(technicalServicesProvider);
         },
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Yeni Kayıt'),
+        label: const Text('Yeni Servis Kaydı', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
     );
   }
 
   _StatusInfo _statusInfo(String? s) {
     switch (s) {
-      case 'waiting':     return _StatusInfo('⏳ Bekliyor', AppColors.warning);
-      case 'in_progress': return _StatusInfo('🔧 İşlemde',  AppColors.accent);
-      case 'done':        return _StatusInfo('✅ Tamam',    AppColors.success);
-      case 'delivered':   return _StatusInfo('📦 Teslim',   AppColors.success);
-      case 'cancelled':   return _StatusInfo('❌ İptal',    AppColors.error);
-      default:            return _StatusInfo('Tümü',        AppColors.textSecondary);
+      case 'waiting':     return _StatusInfo('Bekliyor', AppColors.warning);
+      case 'in_progress': return _StatusInfo('İşlemde',  AppColors.primary);
+      case 'done':        return _StatusInfo('Tamamlandı', AppColors.teal);
+      case 'delivered':   return _StatusInfo('Teslim Edildi', AppColors.teal);
+      case 'cancelled':   return _StatusInfo('İptal',    AppColors.error);
+      default:            return _StatusInfo('Tümü',     AppColors.textSecondary);
     }
   }
 }
@@ -200,36 +217,38 @@ class _ServiceCard extends ConsumerWidget {
     final deviceIcon = _deviceIcon(service.deviceType);
     final deviceColor = _deviceColor(service.deviceType);
 
-    return GestureDetector(
-      onTap: () async {
-        final changed = await context.push<bool>(
-          '/boss/technical-service/${service.id}');
-        if (changed == true) ref.invalidate(technicalServicesProvider);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Padding(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          final changed = await context.push<bool>('/boss/technical-service/${service.id}');
+          if (changed == true) ref.invalidate(technicalServicesProvider);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Device icon with gradient bg
+              // Device Icon
               Container(
-                width: 54, height: 54,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    colors: [deviceColor.withOpacity(0.25), deviceColor.withOpacity(0.1)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  color: deviceColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(deviceIcon, color: deviceColor, size: 26),
+                child: Icon(deviceIcon, color: deviceColor, size: 24),
               ),
               const SizedBox(width: 14),
-              // Info
+
+              // Service Details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,50 +258,60 @@ class _ServiceCard extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             '${service.deviceBrand}${service.deviceModel != null ? ' ${service.deviceModel}' : ''}',
-                            style: Theme.of(context).textTheme.titleSmall,
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.navy,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
                         _StatusChip(label: statusInfo.label, color: statusInfo.color),
                       ],
                     ),
-                    const SizedBox(height: 5),
-                    Row(children: [
-                      const Icon(Icons.person_outline_rounded,
-                        size: 13, color: AppColors.textHint),
-                      const SizedBox(width: 4),
-                      Text(service.customerName,
-                        style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(fontSize: 12)),
-                    ]),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline_rounded, size: 13, color: AppColors.textHint),
+                        const SizedBox(width: 4),
+                        Text(
+                          service.customerName,
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 3),
-                    Text(service.faultDescription,
-                      style: const TextStyle(color: AppColors.textHint, fontSize: 12),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 6),
+                    Text(
+                      'Arıza: ${service.faultDescription}',
+                      style: const TextStyle(color: AppColors.textHint, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         if (service.technicianName != null) ...[
-                          const Icon(Icons.engineering_rounded,
-                            size: 12, color: AppColors.accent),
+                          const Icon(Icons.engineering_outlined, size: 13, color: AppColors.primary),
                           const SizedBox(width: 4),
-                          Text(service.technicianName!,
-                            style: const TextStyle(color: AppColors.accent,
-                              fontSize: 11, fontWeight: FontWeight.w600)),
-                          const SizedBox(width: 10),
+                          Text(
+                            service.technicianName!,
+                            style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
                         ],
                         const Spacer(),
                         if (service.price > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.successGlow,
-                              borderRadius: BorderRadius.circular(6)),
-                            child: Text('${service.price.toStringAsFixed(0)} ₺',
-                              style: const TextStyle(color: AppColors.success,
-                                fontWeight: FontWeight.w700, fontSize: 12)),
+                              color: AppColors.tealTint,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${service.price.toStringAsFixed(0)} ₺',
+                              style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700, fontSize: 12),
+                            ),
                           ),
                       ],
                     ),
@@ -290,8 +319,7 @@ class _ServiceCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textHint, size: 20),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 18),
             ],
           ),
         ),
@@ -301,9 +329,9 @@ class _ServiceCard extends ConsumerWidget {
 
   IconData _deviceIcon(String type) {
     switch (type) {
-      case 'laptop': return Icons.laptop_rounded;
+      case 'laptop': return Icons.laptop_chromebook_rounded;
       case 'phone': return Icons.smartphone_rounded;
-      case 'tablet': return Icons.tablet_rounded;
+      case 'tablet': return Icons.tablet_mac_rounded;
       case 'tv': return Icons.tv_rounded;
       default: return Icons.devices_other_rounded;
     }
@@ -311,22 +339,22 @@ class _ServiceCard extends ConsumerWidget {
 
   Color _deviceColor(String type) {
     switch (type) {
-      case 'laptop': return AppColors.accent;
-      case 'phone': return AppColors.pink;
-      case 'tablet': return AppColors.warning;
-      case 'tv': return AppColors.success;
+      case 'laptop': return AppColors.navy;
+      case 'phone': return AppColors.primary;
+      case 'tablet': return AppColors.teal;
+      case 'tv': return const Color(0xFF6366F1);
       default: return AppColors.textSecondary;
     }
   }
 
   _StatusInfo _statusInfo(String s) {
     switch (s) {
-      case 'waiting':     return _StatusInfo('⏳ Bekliyor', AppColors.warning);
-      case 'in_progress': return _StatusInfo('🔧 İşlemde',  AppColors.accent);
-      case 'done':        return _StatusInfo('✅ Tamam',    AppColors.success);
-      case 'delivered':   return _StatusInfo('📦 Teslim',   AppColors.success);
-      case 'cancelled':   return _StatusInfo('❌ İptal',    AppColors.error);
-      default:            return _StatusInfo(s,              AppColors.textSecondary);
+      case 'waiting':     return _StatusInfo('Bekliyor', AppColors.warning);
+      case 'in_progress': return _StatusInfo('İşlemde',  AppColors.primary);
+      case 'done':        return _StatusInfo('Tamamlandı', AppColors.teal);
+      case 'delivered':   return _StatusInfo('Teslim Edildi', AppColors.teal);
+      case 'cancelled':   return _StatusInfo('İptal Edildi', AppColors.error);
+      default:            return _StatusInfo(s, AppColors.textSecondary);
     }
   }
 }
@@ -341,12 +369,14 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
-      child: Text(label, style: TextStyle(
-        color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }

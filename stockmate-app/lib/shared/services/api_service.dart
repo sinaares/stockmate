@@ -12,7 +12,7 @@ class ApiService {
   final FlutterSecureStorage? _storage = kIsWeb ? null : const FlutterSecureStorage();
   SharedPreferences? _prefs;
   late Dio _dio;
-  String _baseUrl = 'http://localhost:3000';
+  String _baseUrl = 'http://127.0.0.1:3000';
 
   Future<void> _write(String key, String value) async {
     if (kIsWeb) {
@@ -46,9 +46,14 @@ class ApiService {
       _prefs = await SharedPreferences.getInstance();
     }
     final savedUrl = await _read('server_url');
-    // Migrate old default port 5000 -> 3000
-    if (savedUrl != null && savedUrl != 'http://localhost:5000') {
-      _baseUrl = savedUrl;
+    if (savedUrl != null && savedUrl.isNotEmpty) {
+      final migrated = savedUrl.replaceAll(':5000', ':3000');
+      _baseUrl = migrated;
+      if (migrated != savedUrl) {
+        await _write('server_url', migrated);
+      }
+    } else {
+      _baseUrl = 'http://localhost:3000';
     }
     _initDio();
   }

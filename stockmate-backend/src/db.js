@@ -1,153 +1,247 @@
-let DatabaseSync;
-try {
-  ({ DatabaseSync } = require('node:sqlite'));
-} catch (_) {}
-
+const { Pool, types } = require('pg');
 const bcrypt = require('bcryptjs');
-const path = require('path');
 require('dotenv').config();
 
-const DB_PATH = process.env.DB_PATH || './stockmate.db';
-let db;
+// Parse BigInt (e.g. COUNT(*)) as numbers
+types.setTypeParser(20, val => (val === null ? null : parseInt(val, 10)));
+// Parse Numeric / Decimal (e.g. price, SUM) as numbers
+types.setTypeParser(1700, val => (val === null ? null : parseFloat(val)));
 
-if (DatabaseSync) {
-  db = new DatabaseSync(path.resolve(DB_PATH));
-  db.pragma = (str) => db.exec(`PRAGMA ${str}`);
-  db.transaction = (fn) => (...args) => {
-    db.exec('BEGIN');
-    try {
-      const result = fn(...args);
-      db.exec('COMMIT');
-      return result;
-    } catch (err) {
-      db.exec('ROLLBACK');
-      throw err;
-    }
-  };
-} else {
-  const Database = require('better-sqlite3');
-  db = new Database(path.resolve(DB_PATH));
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected PostgreSQL pool error:', err);
+});
+
+function formatSql(sql) {
+  let paramIndex = 1;
+  let formatted = sql.replace(/\?/g, () => `$${paramIndex++}`);
+  formatted = formatted.replace(/datetime\('now'\)/gi, 'NOW()');
+  formatted = formatted.replace(/date\('now',\s*'-30 days'\)/gi, "(CURRENT_DATE - INTERVAL '30 days')");
+  formatted = formatted.replace(/date\(created_at\)/gi, 'DATE(created_at)');
+  return formatted;
 }
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+function normalizeParams(params) {
+  if (params.length === 1 && Array.isArray(params[0])) {
+    return params[0];
+  }
+  return params;
+}
 
-function initDb() {
-  db.exec(`
+async function query(sql, params = []) {
+  const formattedSql = formatSql(sql);
+  const flatParams = normalizeParams(params);
+  return pool.query(formattedSql, flatParams);
+}
+
+async function all(sql, ...params) {
+  const res = await query(sql, params);
+  return res.rows;
+}
+
+async function get(sql, ...params) {
+  const res = await query(sql, params);
+  return res.rows[0] || null;
+}
+
+async function run(sql, ...params) {
+  let formattedSql = formatSql(sql);
+  const flatParams = normalizeParams(params);
+  const isInsert = /^\s*INSERT\s+INTO/i.test(formattedSql);
+  if (isInsert && !/RETURNING/i.test(formattedSql)) {
+    formattedSql += ' RETURNING id';
+  }
+  const res = await pool.query(formattedSql, flatParams);
+  const lastInsertRowid = res.rows[0]?.id;
+  return {
+    rowCount: res.rowCount,
+    lastInsertRowid,
+  };
+}
+
+async function transaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const trxDb = {
+      query: (sql, params = []) => client.query(formatSql(sql), normalizeParams(params)),
+      get: async (sql, ...params) => {
+        const res = await client.query(formatSql(sql), normalizeParams(params));
+        return res.rows[0] || null;
+      },
+      all: async (sql, ...params) => {
+        const res = await client.query(formatSql(sql), normalizeParams(params));
+        return res.rows;
+      },
+      run: async (sql, ...params) => {
+        let formattedSql = formatSql(sql);
+        const flatParams = normalizeParams(params);
+        if (/^\s*INSERT\s+INTO/i.test(formattedSql) && !/RETURNING/i.test(formattedSql)) {
+          formattedSql += ' RETURNING id';
+        }
+        const res = await client.query(formattedSql, flatParams);
+        return {
+          rowCount: res.rowCount,
+          lastInsertRowid: res.rows[0]?.id,
+        };
+      },
+      prepare: (sql) => ({
+        all: (...p) => trxDb.all(sql, ...p),
+        get: (...p) => trxDb.get(sql, ...p),
+        run: (...p) => trxDb.run(sql, ...p),
+      }),
+    };
+    const result = await fn(trxDb);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+function prepare(sql) {
+  return {
+    all: (...p) => all(sql, ...p),
+    get: (...p) => get(sql, ...p),
+    run: (...p) => run(sql, ...p),
+  };
+}
+
+async function initDb() {
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      name        TEXT    NOT NULL,
-      email       TEXT    NOT NULL UNIQUE,
-      password    TEXT    NOT NULL,
-      role        TEXT    NOT NULL CHECK(role IN ('boss','employee')),
+      id          SERIAL PRIMARY KEY,
+      name        VARCHAR(255) NOT NULL,
+      email       VARCHAR(255) NOT NULL UNIQUE,
+      password    VARCHAR(255) NOT NULL,
+      role        VARCHAR(50) NOT NULL CHECK(role IN ('boss','employee')),
       active      INTEGER NOT NULL DEFAULT 1,
-      created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  db.exec(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
-      id      INTEGER PRIMARY KEY AUTOINCREMENT,
-      name_tr TEXT NOT NULL,
-      name_en TEXT NOT NULL
+      id      SERIAL PRIMARY KEY,
+      name_tr VARCHAR(255) NOT NULL,
+      name_en VARCHAR(255) NOT NULL
     );
   `);
 
-  db.exec(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS products (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      name          TEXT    NOT NULL,
-      barcode       TEXT    UNIQUE,
-      serial_key    TEXT    UNIQUE,
-      category_id   INTEGER REFERENCES categories(id),
+      id            SERIAL PRIMARY KEY,
+      name          VARCHAR(255) NOT NULL,
+      barcode       VARCHAR(255) UNIQUE,
+      serial_key    VARCHAR(255) UNIQUE,
+      category_id   INTEGER REFERENCES categories(id) ON DELETE SET NULL,
       quantity      INTEGER NOT NULL DEFAULT 0,
-      unit          TEXT    NOT NULL DEFAULT 'adet',
-      price         REAL    NOT NULL DEFAULT 0,
+      unit          VARCHAR(50) NOT NULL DEFAULT 'adet',
+      price         NUMERIC(12,2) NOT NULL DEFAULT 0,
       description   TEXT,
       min_stock     INTEGER NOT NULL DEFAULT 5,
-      created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
-      updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  db.exec(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS requests (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      employee_id   INTEGER NOT NULL REFERENCES users(id),
-      product_id    INTEGER NOT NULL REFERENCES products(id),
-      action_type   TEXT    NOT NULL CHECK(action_type IN ('add','remove','sell','use','restock')),
+      id            SERIAL PRIMARY KEY,
+      employee_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      product_id    INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      action_type   VARCHAR(50) NOT NULL CHECK(action_type IN ('add','remove','sell','use','restock')),
       quantity      INTEGER NOT NULL,
       note          TEXT,
-      status        TEXT    NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+      status        VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
       reject_reason TEXT,
-      resolved_by   INTEGER REFERENCES users(id),
-      resolved_at   TEXT,
-      created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+      resolved_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      resolved_at   TIMESTAMPTZ,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  db.exec(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS transactions (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
-      product_id      INTEGER NOT NULL REFERENCES products(id),
-      user_id         INTEGER NOT NULL REFERENCES users(id),
-      action_type     TEXT    NOT NULL,
+      id              SERIAL PRIMARY KEY,
+      product_id      INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      action_type     VARCHAR(50) NOT NULL,
       quantity        INTEGER NOT NULL,
       quantity_before INTEGER NOT NULL,
       quantity_after  INTEGER NOT NULL,
       note            TEXT,
-      request_id      INTEGER REFERENCES requests(id),
-      created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+      request_id      INTEGER REFERENCES requests(id) ON DELETE SET NULL,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  db.exec(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS technical_services (
-      id                INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name     TEXT    NOT NULL,
-      customer_phone    TEXT,
-      device_type       TEXT    NOT NULL CHECK(device_type IN ('laptop','phone','tablet','tv','other')),
-      device_brand      TEXT    NOT NULL,
-      device_model      TEXT,
-      serial_no         TEXT,
-      fault_description TEXT    NOT NULL,
+      id                SERIAL PRIMARY KEY,
+      customer_name     VARCHAR(255) NOT NULL,
+      customer_phone    VARCHAR(100),
+      device_type       VARCHAR(50) NOT NULL CHECK(device_type IN ('laptop','phone','tablet','tv','other')),
+      device_brand      VARCHAR(255) NOT NULL,
+      device_model      VARCHAR(255),
+      serial_no         VARCHAR(255),
+      fault_description TEXT NOT NULL,
       parts_to_replace  TEXT,
-      technician_id     INTEGER REFERENCES users(id),
-      status            TEXT    NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting','in_progress','done','delivered','cancelled')),
+      technician_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      status            VARCHAR(50) NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting','in_progress','done','delivered','cancelled')),
       note              TEXT,
-      price             REAL    NOT NULL DEFAULT 0,
-      created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
-      updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+      price             NUMERIC(12,2) NOT NULL DEFAULT 0,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  const boss = db.prepare('SELECT id FROM users WHERE email = ?').get('boss@stockmate.local');
+  const boss = await get('SELECT id FROM users WHERE email = $1', 'boss@stockmate.local');
   if (!boss) {
     const hash = bcrypt.hashSync('boss123', 10);
-    db.prepare(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'boss')`).run('Boss', 'boss@stockmate.local', hash);
+    await run('INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)', 'Boss', 'boss@stockmate.local', hash, 'boss');
     console.log('Default boss created — email: boss@stockmate.local  password: boss123');
   }
 
-  const catCount = db.prepare('SELECT COUNT(*) as c FROM categories').get();
-  if (catCount.c === 0) {
+  const catCount = await get('SELECT COUNT(*) as c FROM categories');
+  if (catCount && catCount.c === 0) {
     const cats = [
-      ['Kablo & Baglanti','Cable & Connectivity'],
-      ['Anahtar & Priz','Switch & Socket'],
-      ['Aydinlatma','Lighting'],
-      ['Guc Kaynagi','Power Supply'],
-      ['Sensor & Detektor','Sensor & Detector'],
-      ['Otomasyon','Automation'],
-      ['Motor & Surucu','Motor & Driver'],
-      ['Olcum Cihazi','Measurement Device'],
-      ['Yedek Parca','Spare Parts'],
-      ['Diger','Other']
+      ['Kablo & Baglanti', 'Cable & Connectivity'],
+      ['Anahtar & Priz', 'Switch & Socket'],
+      ['Aydinlatma', 'Lighting'],
+      ['Guc Kaynagi', 'Power Supply'],
+      ['Sensor & Detektor', 'Sensor & Detector'],
+      ['Otomasyon', 'Automation'],
+      ['Motor & Surucu', 'Motor & Driver'],
+      ['Olcum Cihazi', 'Measurement Device'],
+      ['Yedek Parca', 'Spare Parts'],
+      ['Diger', 'Other']
     ];
-    const ins = db.prepare('INSERT INTO categories (name_tr, name_en) VALUES (?, ?)');
-    cats.forEach(([tr, en]) => ins.run(tr, en));
+    for (const [tr, en] of cats) {
+      await run('INSERT INTO categories (name_tr, name_en) VALUES ($1, $2)', tr, en);
+    }
     console.log('Default categories seeded');
   }
-  console.log('Database initialized');
+  console.log('PostgreSQL Database initialized');
 }
 
-initDb();
-module.exports = db;
+const initPromise = initDb().catch((err) => {
+  console.error('Failed to initialize PostgreSQL Database:', err);
+});
+
+module.exports = {
+  pool,
+  query,
+  all,
+  get,
+  run,
+  prepare,
+  transaction,
+  initPromise,
+};

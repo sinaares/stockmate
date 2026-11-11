@@ -17,6 +17,7 @@ import '../features/technical_service/screens/technical_service_list_screen.dart
 import '../features/technical_service/screens/technical_service_detail_screen.dart';
 import '../features/technical_service/screens/add_edit_technical_service_screen.dart';
 import '../features/technical_service/models/technical_service.dart';
+import 'constants/app_colors.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
@@ -62,32 +63,89 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil / Profile')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Profil & Hesap'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            CircleAvatar(radius: 40, backgroundColor: const Color(0xFF4F8EF7),
-              child: Text(user.name[0].toUpperCase(), style: const TextStyle(fontSize: 32, color: Colors.white))),
-            const SizedBox(height: 16),
-            Text(user.name, style: Theme.of(context).textTheme.titleLarge),
-            Text(user.email, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 8),
-            Chip(label: Text(user.role == 'boss' ? '👑 Boss' : '👷 Çalışan / Employee')),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border),
+                boxShadow: AppColors.cardShadow,
+              ),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 38,
+                    backgroundColor: AppColors.navy,
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                      style: const TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                      color: AppColors.navy,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user.email,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: user.isBoss ? AppColors.primaryTint : AppColors.tealTint,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: user.isBoss ? AppColors.primary.withOpacity(0.3) : AppColors.teal.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      user.role == 'boss' ? 'Yönetici / Manager' : 'Saha Operatörü / Employee',
+                      style: TextStyle(
+                        color: user.isBoss ? AppColors.primary : AppColors.teal,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const Spacer(),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.logout),
-                label: const Text('Çıkış Yap / Sign Out'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE74C3C)),
+              height: 48,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.logout_rounded, color: AppColors.error),
+                label: const Text(
+                  'Oturumu Kapat',
+                  style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.errorBorder),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: AppColors.errorTint,
+                ),
                 onPressed: () async {
                   await ref.read(authProvider.notifier).logout();
                   if (context.mounted) context.go('/login');
