@@ -29,6 +29,7 @@ app.use('/transactions',       require('./src/routes/transactions'));
 app.use('/employees',          require('./src/routes/employees'));
 app.use('/categories',         require('./src/routes/categories'));
 app.use('/technical-services', require('./src/routes/technical_services'));
+app.use('/netsis',             require('./src/routes/netsis'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));

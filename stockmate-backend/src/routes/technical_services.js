@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { authenticate } = require('../middleware/auth');
 
-// GET /technical-services — list all (boss) or own (employee technician)
+// GET /technical-services — list all
 router.get('/', authenticate, async (req, res) => {
   try {
     const { status, device_type, search } = req.query;
@@ -38,7 +38,8 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// GET /technical-services/stats — counts by status
+// ⚠️ /stats MUST be declared before /:id
+// Otherwise Express treats the string "stats" as the :id param → infinite spinner
 router.get('/stats', authenticate, async (req, res) => {
   try {
     const stats = await db.prepare(`
@@ -67,7 +68,7 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// POST /technical-services — create new service record
+// POST /technical-services — create
 router.post('/', authenticate, async (req, res) => {
   try {
     const {
@@ -145,7 +146,7 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-// PATCH /technical-services/:id/status — quick status update
+// PATCH /technical-services/:id/status
 router.patch('/:id/status', authenticate, async (req, res) => {
   try {
     const { status } = req.body;

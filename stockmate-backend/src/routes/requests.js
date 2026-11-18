@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { authenticate, requireBoss } = require('../middleware/auth');
+const netsisService = require('../services/netsisService');
 const router = express.Router();
 
 // GET /requests — pending list (boss sees all, employee sees own)
@@ -124,7 +125,33 @@ async function executeAction(req, res, product, action_type, quantity, note, req
     `).run(product.id, req.user.id, action_type, qty, before, after, note || null, request_id || null);
   });
 
-  res.json({ success: true, product_id: product.id, action_type, quantity: qty, stock_before: before, stock_after: after });
+  // Netsis ERP Fiş Entegrasyonu (Arka planda çalışır, onay işlemini asla aksatmaz)
+  let netsisDocNo = null;
+  try {
+    const slipResult = await netsisService.createStockSlip({
+      requestId: request_id,
+      productId: product.id,
+      actionType: action_type,
+      quantity: qty,
+      employeeName: req.user.name || 'Yetkili',
+      note: note || '',
+    });
+    if (slipResult && slipResult.docNo) {
+      netsisDocNo = slipResult.docNo;
+    }
+  } catch (erpErr) {
+    console.error('Netsis fiş oluşturma uyarısı:', erpErr.message);
+  }
+
+  res.json({
+    success: true,
+    product_id: product.id,
+    action_type,
+    quantity: qty,
+    stock_before: before,
+    stock_after: after,
+    netsis_doc_no: netsisDocNo,
+  });
 }
 
 module.exports = router;

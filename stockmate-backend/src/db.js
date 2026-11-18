@@ -202,6 +202,52 @@ async function initDb() {
     );
   `);
 
+  // Netsis ERP integration migration
+  await pool.query(`
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS netsis_code VARCHAR(100);
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMPTZ;
+    ALTER TABLE requests ADD COLUMN IF NOT EXISTS netsis_doc_no VARCHAR(100);
+    ALTER TABLE requests ADD COLUMN IF NOT EXISTS netsis_status VARCHAR(50) DEFAULT 'not_synced';
+    ALTER TABLE transactions ADD COLUMN IF NOT EXISTS netsis_doc_no VARCHAR(100);
+
+    CREATE TABLE IF NOT EXISTS erp_settings (
+      id              SERIAL PRIMARY KEY,
+      provider        VARCHAR(50) NOT NULL DEFAULT 'netsis',
+      mode            VARCHAR(50) NOT NULL DEFAULT 'simulation',
+      server_host     VARCHAR(255) DEFAULT '127.0.0.1',
+      server_port     INTEGER DEFAULT 1433,
+      database_name   VARCHAR(100) DEFAULT 'NETSIS_2026',
+      db_user         VARCHAR(100) DEFAULT 'sa',
+      db_password     VARCHAR(255) DEFAULT '',
+      rest_url        VARCHAR(255) DEFAULT 'http://localhost:8090/api',
+      rest_token      VARCHAR(500) DEFAULT '',
+      branch_code     INTEGER DEFAULT 0,
+      warehouse_code  INTEGER DEFAULT 1,
+      auto_sync_stock BOOLEAN DEFAULT false,
+      is_active       BOOLEAN DEFAULT true,
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS erp_sync_logs (
+      id            SERIAL PRIMARY KEY,
+      action        VARCHAR(50) NOT NULL,
+      status        VARCHAR(20) NOT NULL,
+      items_synced  INTEGER DEFAULT 0,
+      message       TEXT,
+      details       JSONB,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  const erpCount = await get('SELECT COUNT(*) as c FROM erp_settings');
+  if (erpCount && erpCount.c === 0) {
+    await run(`
+      INSERT INTO erp_settings (
+        provider, mode, server_host, server_port, database_name, db_user, db_password, warehouse_code, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `, 'netsis', 'simulation', '127.0.0.1', 1433, 'NETSIS_2026', 'sa', '', 1, true);
+  }
+
   const boss = await get('SELECT id FROM users WHERE email = $1', 'boss@stockmate.local');
   if (!boss) {
     const hash = bcrypt.hashSync('boss123', 10);

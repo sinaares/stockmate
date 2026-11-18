@@ -1,0 +1,43 @@
+# ==============================================================================
+# .geminiignore - StockMate Flutter App
+# ==============================================================================
+
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+android/captures/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+
+# Windows
+windows/flutter/ephemeral/
+
+# Media
+*.png
+*.jpg
+*.jpeg
+*.mp4
+
+# IDE & OS caches
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

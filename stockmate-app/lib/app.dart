@@ -1,27 +1,59 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router.dart';
 import 'features/auth/providers/auth_provider.dart';
 
+// ─── Theme Mode Provider ───────────────────────────────────────────────────────
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
+  (ref) => ThemeModeNotifier(),
+);
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  ThemeModeNotifier() : super(ThemeMode.light) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool('dark_mode') ?? false;
+    state = isDark ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  Future<void> toggle() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = state == ThemeMode.dark;
+    state = isDark ? ThemeMode.light : ThemeMode.dark;
+    await prefs.setBool('dark_mode', !isDark);
+  }
+
+  bool get isDark => state == ThemeMode.dark;
+}
+
+// ─── App Root ────────────────────────────────────────────────────────────────
 class StockMateApp extends ConsumerWidget {
   const StockMateApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+    final router    = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'StockMate',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) => InactivityWrapper(child: child ?? const SizedBox()),
     );
   }
 }
 
+// ─── Inactivity Auto-Logout ───────────────────────────────────────────────────
 class InactivityWrapper extends ConsumerStatefulWidget {
   final Widget child;
   const InactivityWrapper({super.key, required this.child});

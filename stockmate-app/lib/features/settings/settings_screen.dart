@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../auth/providers/auth_provider.dart';
+import '../../../app.dart'; // themeModeProvider
 
 // ─── Language Provider ────────────────────────────────────────────────────────
 final languageProvider = StateProvider<String>((ref) => 'tr'); // 'tr' or 'en'
@@ -19,11 +20,14 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isBoss = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    final user = ref.read(authProvider).user;
+    _isBoss = user?.isBoss ?? false;
+    _tabController = TabController(length: _isBoss ? 4 : 3, vsync: this);
   }
 
   @override
@@ -37,6 +41,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final lang = ref.watch(languageProvider);
     final user = ref.watch(authProvider).user!;
     final isTR = lang == 'tr';
+    final isBoss = user.isBoss;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -56,6 +61,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             Tab(icon: const Icon(Icons.person_outline_rounded, size: 18), text: isTR ? 'Profil' : 'Profile'),
             Tab(icon: const Icon(Icons.lock_outline_rounded, size: 18), text: isTR ? 'Şifre' : 'Password'),
             Tab(icon: const Icon(Icons.tune_rounded, size: 18), text: isTR ? 'Genel' : 'General'),
+            if (isBoss)
+              Tab(icon: const Icon(Icons.cloud_sync_rounded, size: 18), text: 'Netsis ERP'),
           ],
         ),
       ),
@@ -65,6 +72,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           _ProfileTab(lang: lang, user: user),
           _PasswordTab(lang: lang),
           _GeneralTab(lang: lang),
+          if (isBoss)
+            _NetsisTab(lang: lang),
         ],
       ),
     );
@@ -530,6 +539,54 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
           ),
           const SizedBox(height: 18),
 
+          // ── Dark Mode Toggle Card ──────────────────────────────────────────
+          Builder(builder: (context) {
+            final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+            final isTR = widget.lang == 'tr';
+            return _buildCard(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF21262D) : AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                      color: isDark ? const Color(0xFF58A6FF) : AppColors.warning,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isTR ? 'Gece Modu' : 'Dark Mode',
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                        Text(
+                          isDark
+                              ? (isTR ? 'Aktif — Koyu tema kullanılıyor' : 'Active — Using dark theme')
+                              : (isTR ? 'Pasif — Açık tema kullanılıyor' : 'Inactive — Using light theme'),
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: isDark,
+                    onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
+                    activeColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 18),
+
           // Server Connection Card
           _buildCard(
             child: Column(
@@ -676,6 +733,525 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
           ],
         ),
       );
+}
+
+// ─── Netsis ERP Tab ──────────────────────────────────────────────────────────
+class _NetsisTab extends StatefulWidget {
+  final String lang;
+  const _NetsisTab({required this.lang});
+
+  @override
+  State<_NetsisTab> createState() => _NetsisTabState();
+}
+
+class _NetsisTabState extends State<_NetsisTab> {
+  bool _loading = true;
+  bool _saving = false;
+  bool _testing = false;
+  bool _syncing = false;
+  String? _message;
+  bool _messageSuccess = false;
+  String? _testResult;
+  bool _testSuccess = false;
+
+  String _mode = 'simulation';
+  late TextEditingController _hostCtrl;
+  late TextEditingController _portCtrl;
+  late TextEditingController _dbNameCtrl;
+  late TextEditingController _userCtrl;
+  late TextEditingController _passwordCtrl;
+  late TextEditingController _restUrlCtrl;
+  late TextEditingController _warehouseCtrl;
+  bool _autoSync = false;
+  bool _isActive = true;
+  List<dynamic> _logs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _hostCtrl = TextEditingController(text: '127.0.0.1');
+    _portCtrl = TextEditingController(text: '1433');
+    _dbNameCtrl = TextEditingController(text: 'NETSIS_2026');
+    _userCtrl = TextEditingController(text: 'sa');
+    _passwordCtrl = TextEditingController();
+    _restUrlCtrl = TextEditingController(text: 'http://localhost:8090/api');
+    _warehouseCtrl = TextEditingController(text: '1');
+    _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _hostCtrl.dispose();
+    _portCtrl.dispose();
+    _dbNameCtrl.dispose();
+    _userCtrl.dispose();
+    _passwordCtrl.dispose();
+    _restUrlCtrl.dispose();
+    _warehouseCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    setState(() => _loading = true);
+    try {
+      final s = await ApiService.instance.getNetsisSettings();
+      final logs = await ApiService.instance.getNetsisLogs(10);
+      setState(() {
+        _mode = s['mode'] ?? 'simulation';
+        _hostCtrl.text = s['server_host'] ?? '127.0.0.1';
+        _portCtrl.text = (s['server_port'] ?? 1433).toString();
+        _dbNameCtrl.text = s['database_name'] ?? 'NETSIS_2026';
+        _userCtrl.text = s['db_user'] ?? 'sa';
+        _passwordCtrl.text = s['db_password_masked'] ?? '';
+        _restUrlCtrl.text = s['rest_url'] ?? 'http://localhost:8090/api';
+        _warehouseCtrl.text = (s['warehouse_code'] ?? 1).toString();
+        _autoSync = s['auto_sync_stock'] ?? false;
+        _isActive = s['is_active'] ?? true;
+        _logs = logs;
+      });
+    } catch (e) {
+      setState(() {
+        _message = 'Netsis ayarları yüklenemedi: $e';
+        _messageSuccess = false;
+      });
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    setState(() {
+      _saving = true;
+      _message = null;
+    });
+    try {
+      final payload = {
+        'mode': _mode,
+        'server_host': _hostCtrl.text.trim(),
+        'server_port': int.tryParse(_portCtrl.text.trim()) ?? 1433,
+        'database_name': _dbNameCtrl.text.trim(),
+        'db_user': _userCtrl.text.trim(),
+        'rest_url': _restUrlCtrl.text.trim(),
+        'warehouse_code': int.tryParse(_warehouseCtrl.text.trim()) ?? 1,
+        'auto_sync_stock': _autoSync,
+        'is_active': _isActive,
+      };
+      if (_passwordCtrl.text.isNotEmpty && !_passwordCtrl.text.contains('*')) {
+        payload['db_password'] = _passwordCtrl.text;
+      }
+      await ApiService.instance.updateNetsisSettings(payload);
+      setState(() {
+        _message = widget.lang == 'tr' ? 'Netsis ayarları başarıyla kaydedildi ✓' : 'Netsis settings saved successfully ✓';
+        _messageSuccess = true;
+      });
+    } catch (e) {
+      setState(() {
+        _message = 'Kaydetme hatası: $e';
+        _messageSuccess = false;
+      });
+    } finally {
+      setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _testConnection() async {
+    setState(() {
+      _testing = true;
+      _testResult = null;
+    });
+    try {
+      final res = await ApiService.instance.testNetsisConnection();
+      setState(() {
+        _testSuccess = res['success'] == true;
+        _testResult = res['message'] ?? 'Bağlantı kontrolü tamamlandı.';
+      });
+    } catch (e) {
+      setState(() {
+        _testSuccess = false;
+        _testResult = 'Hata: $e';
+      });
+    } finally {
+      setState(() => _testing = false);
+    }
+  }
+
+  Future<void> _syncProducts() async {
+    setState(() {
+      _syncing = true;
+      _message = null;
+    });
+    try {
+      final res = await ApiService.instance.syncNetsisProducts();
+      final total = res['totalSynced'] ?? 0;
+      final inserted = res['insertedCount'] ?? 0;
+      final updated = res['updatedCount'] ?? 0;
+      final logs = await ApiService.instance.getNetsisLogs(10);
+      setState(() {
+        _message = widget.lang == 'tr'
+            ? 'Senkronizasyon Başarılı: $total ürün eşitlendi ($inserted yeni, $updated güncellendi) ✓'
+            : 'Sync Complete: $total items synced ($inserted new, $updated updated) ✓';
+        _messageSuccess = true;
+        _logs = logs;
+      });
+    } catch (e) {
+      setState(() {
+        _message = 'Senkronizasyon hatası: $e';
+        _messageSuccess = false;
+      });
+    } finally {
+      setState(() => _syncing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isTR = widget.lang == 'tr';
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Banner / Durum Kartı
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _mode == 'simulation' ? const Color(0xFF1E293B) : const Color(0xFF0F766E),
+                  const Color(0xFF0F172A),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.cloud_sync_rounded, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isTR ? 'Logo Netsis ERP Entegrasyonu' : 'Logo Netsis ERP Integration',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _mode == 'simulation'
+                            ? (isTR ? '● Simülasyon (Test & Demo Modu)' : '● Simulation (Test Mode)')
+                            : _mode == 'mssql'
+                                ? (isTR ? '● Doğrudan MS SQL Bağlantısı' : '● Direct MS SQL Connection')
+                                : (isTR ? '● Netsis REST Servisi' : '● Netsis REST Service'),
+                        style: TextStyle(
+                          color: _mode == 'simulation' ? const Color(0xFF38BDF8) : const Color(0xFF34D399),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          if (_message != null) ...[
+            _buildMessage(_message!, _messageSuccess),
+            const SizedBox(height: 16),
+          ],
+
+          if (_testResult != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: _testSuccess ? AppColors.tealTint : AppColors.errorTint,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _testSuccess ? AppColors.teal : AppColors.error),
+              ),
+              child: Row(
+                children: [
+                  Icon(_testSuccess ? Icons.check_circle : Icons.error, color: _testSuccess ? AppColors.teal : AppColors.error, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _testResult!,
+                      style: TextStyle(color: _testSuccess ? AppColors.teal : AppColors.error, fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Hızlı Eylemler (Test & Eşitleme)
+          _buildCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isTR ? 'Hızlı ERP İşlemleri' : 'Quick ERP Actions',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.navy),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _testing ? null : _testConnection,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: _testing
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.wifi_tethering_rounded, size: 18),
+                        label: Text(isTR ? 'Bağlantıyı Test Et' : 'Test Connection', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _syncing ? null : _syncProducts,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: _syncing
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.sync_rounded, size: 18),
+                        label: Text(isTR ? 'Şimdi Senkronize Et' : 'Sync Products', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Yapılandırma Kartı
+          _buildCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isTR ? 'Bağlantı & Entegrasyon Ayarları' : 'Connection & Integration Settings',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.navy),
+                ),
+                const SizedBox(height: 16),
+
+                // Mod Seçimi
+                Text(isTR ? 'Entegrasyon Modu' : 'Integration Mode', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _mode,
+                      isExpanded: true,
+                      items: [
+                        DropdownMenuItem(
+                          value: 'simulation',
+                          child: Text(isTR ? '🧪 Simülasyon (Test/Demo - Canlı DB Gerekmez)' : '🧪 Simulation (Mock/Demo)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'mssql',
+                          child: Text(isTR ? '🗄️ Doğrudan MS SQL (TBLSTSABIT & TBLSTOKURS)' : '🗄️ Direct MS SQL (Native)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'rest',
+                          child: Text(isTR ? '🌐 Netsis REST API Servisi' : '🌐 Netsis REST API Gateway'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setState(() => _mode = val);
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                if (_mode == 'mssql') ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          controller: _hostCtrl,
+                          decoration: _inputDecoration(isTR ? 'Sunucu IP/Host (192.168.1.50)' : 'Server Host', Icons.dns_rounded),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 1,
+                        child: TextField(
+                          controller: _portCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Port', Icons.numbers_rounded),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _dbNameCtrl,
+                    decoration: _inputDecoration(isTR ? 'Veritabanı Adı (örn: SIRKET_2026)' : 'Database Name', Icons.storage_rounded),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _userCtrl,
+                          decoration: _inputDecoration(isTR ? 'SQL Kullanıcı Adı (sa)' : 'SQL Username', Icons.person_rounded),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _passwordCtrl,
+                          obscureText: true,
+                          decoration: _inputDecoration(isTR ? 'SQL Şifresi' : 'SQL Password', Icons.lock_rounded),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                if (_mode == 'rest') ...[
+                  TextField(
+                    controller: _restUrlCtrl,
+                    decoration: _inputDecoration(isTR ? 'REST API URL (http://...)' : 'REST API URL', Icons.link_rounded),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                TextField(
+                  controller: _warehouseCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: _inputDecoration(isTR ? 'Depo Kodu (Varsayılan: 1)' : 'Warehouse Code', Icons.warehouse_rounded),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saving ? null : _saveSettings,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: _saving
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(isTR ? 'Ayarları Kaydet' : 'Save Settings', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Son Entegrasyon Logları
+          _buildCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isTR ? 'Son Senkronizasyon & Fiş Hareketleri' : 'Recent ERP Logs',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.navy),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.primary),
+                      onPressed: _loadSettings,
+                      tooltip: isTR ? 'Yenile' : 'Refresh',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_logs.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: Text(
+                        isTR ? 'Henüz kaydedilmiş ERP işlemi yok.' : 'No ERP actions recorded yet.',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                    ),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _logs.length,
+                    separatorBuilder: (_, __) => const Divider(height: 16),
+                    itemBuilder: (context, i) {
+                      final item = _logs[i];
+                      final isSuccess = item['status'] == 'success';
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            isSuccess ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+                            color: isSuccess ? AppColors.teal : AppColors.error,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['message'] ?? '',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.navy),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item['created_at'] != null ? item['created_at'].toString().split('T').first : '',
+                                  style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─── Shared Helpers ──────────────────────────────────────────────────────────

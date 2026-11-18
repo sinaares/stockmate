@@ -237,4 +237,30 @@ class ApiService {
   Future<void> deleteTechnicalService(int id) async {
     await _dio.delete('/technical-services/$id');
   }
+
+  // Netsis ERP Integration
+  Future<Map<String, dynamic>> getNetsisSettings() async {
+    final res = await _dio.get('/netsis/settings');
+    return Map<String, dynamic>.from(res.data);
+  }
+
+  Future<Map<String, dynamic>> updateNetsisSettings(Map<String, dynamic> data) async {
+    final res = await _dio.post('/netsis/settings', data: data);
+    return Map<String, dynamic>.from(res.data);
+  }
+
+  Future<Map<String, dynamic>> testNetsisConnection() async {
+    final res = await _dio.get('/netsis/test');
+    return Map<String, dynamic>.from(res.data);
+  }
+
+  Future<Map<String, dynamic>> syncNetsisProducts() async {
+    final res = await _dio.post('/netsis/sync');
+    return Map<String, dynamic>.from(res.data);
+  }
+
+  Future<List<dynamic>> getNetsisLogs([int limit = 20]) async {
+    final res = await _dio.get('/netsis/logs', queryParameters: {'limit': limit});
+    return res.data;
+  }
 }
