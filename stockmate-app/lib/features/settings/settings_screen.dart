@@ -44,12 +44,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final isBoss = user.isBoss;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           isTR ? 'Sistem Ayarları' : 'Settings',
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
         ),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
@@ -148,57 +151,62 @@ class _ProfileTabState extends ConsumerState<_ProfileTab> {
       child: Column(
         children: [
           // Avatar Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.border),
-              boxShadow: AppColors.cardShadow,
-            ),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.navy,
-                  child: Text(
-                    user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  user.name,
-                  style: const TextStyle(
-                    color: AppColors.navy,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(user.email, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: user.isBoss ? AppColors.primaryTint : AppColors.tealTint,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: user.isBoss ? AppColors.primary.withOpacity(0.3) : AppColors.teal.withOpacity(0.3),
+          Builder(builder: (ctx) {
+            final isDark = Theme.of(ctx).brightness == Brightness.dark;
+            return Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF161B22) : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+                boxShadow: isDark ? null : AppColors.cardShadow,
+              ),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundColor: isDark ? const Color(0xFF2563EB) : AppColors.navy,
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white),
                     ),
                   ),
-                  child: Text(
-                    user.isBoss ? '👑 Yönetici / Boss' : (isTR ? '👷 Çalışan' : '👷 Employee'),
+                  const SizedBox(height: 12),
+                  Text(
+                    user.name,
                     style: TextStyle(
-                      fontSize: 11,
+                      color: isDark ? const Color(0xFF58A6FF) : AppColors.navy,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: user.isBoss ? AppColors.primary : AppColors.teal,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                  const SizedBox(height: 2),
+                  Text(user.email, style: TextStyle(color: isDark ? const Color(0xFF8B949E) : AppColors.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? (user.isBoss ? const Color(0xFF1E3A8A).withOpacity(0.4) : const Color(0xFF134E4A).withOpacity(0.4))
+                          : (user.isBoss ? AppColors.primaryTint : AppColors.tealTint),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: user.isBoss ? AppColors.primary.withOpacity(0.3) : AppColors.teal.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      user.isBoss ? '👑 Yönetici / Boss' : (isTR ? '👷 Çalışan' : '👷 Employee'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: user.isBoss ? AppColors.primary : AppColors.teal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 20),
 
           // Edit Form Card
@@ -349,28 +357,31 @@ class _PasswordTabState extends ConsumerState<_PasswordTab> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.primaryTint,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    isTR
-                        ? 'Hesap güvenliğiniz için şifrenizin en az 6 karakter olmasına dikkat edin.'
-                        : 'Use at least 6 characters for a secure password.',
-                    style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w500),
+          Builder(builder: (ctx) {
+            final isDark = Theme.of(ctx).brightness == Brightness.dark;
+            return Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : AppColors.primaryTint,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isTR
+                          ? 'Hesap güvenliğiniz için şifrenizin en az 6 karakter olmasına dikkat edin.'
+                          : 'Use at least 6 characters for a secure password.',
+                      style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 20),
           _buildCard(
             child: Column(
@@ -505,6 +516,8 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
   Widget build(BuildContext context) {
     final isTR = widget.lang == 'tr';
     final currentLang = ref.watch(languageProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? const Color(0xFF58A6FF) : AppColors.navy;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -517,12 +530,12 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: const [
-                    Icon(Icons.language_rounded, color: AppColors.primary, size: 20),
-                    SizedBox(width: 10),
+                  children: [
+                    const Icon(Icons.language_rounded, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 10),
                     Text(
                       'Uygulama Dili / Language',
-                      style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w700, fontSize: 14),
+                      style: TextStyle(color: titleColor, fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                   ],
                 ),
@@ -565,7 +578,7 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
                       children: [
                         Text(
                           isTR ? 'Gece Modu' : 'Dark Mode',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: isDark ? const Color(0xFFE6EDF3) : AppColors.textPrimary),
                         ),
                         Text(
                           isDark
@@ -593,12 +606,12 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: const [
-                    Icon(Icons.dns_outlined, color: AppColors.primary, size: 20),
-                    SizedBox(width: 10),
+                  children: [
+                    const Icon(Icons.dns_outlined, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 10),
                     Text(
                       'Sunucu & Veritabanı Bağlantısı',
-                      style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w700, fontSize: 14),
+                      style: TextStyle(color: titleColor, fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                   ],
                 ),
@@ -655,12 +668,12 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: const [
-                    Icon(Icons.info_outline_rounded, color: AppColors.navy, size: 20),
-                    SizedBox(width: 10),
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: titleColor, size: 20),
+                    const SizedBox(width: 10),
                     Text(
                       'Uygulama Bilgileri',
-                      style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w700, fontSize: 14),
+                      style: TextStyle(color: titleColor, fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                   ],
                 ),
@@ -678,6 +691,7 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
 
   Widget _langOption(BuildContext context, String label, String value, String current) {
     final selected = value == current;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: () => ref.read(languageProvider.notifier).state = value,
@@ -685,10 +699,12 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primaryTint : AppColors.surfaceMuted,
+            color: selected
+                ? (isDark ? const Color(0xFF1E3A8A).withOpacity(0.4) : AppColors.primaryTint)
+                : (isDark ? const Color(0xFF21262D) : AppColors.surfaceMuted),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: selected ? AppColors.primary : AppColors.border,
+              color: selected ? AppColors.primary : (isDark ? const Color(0xFF30363D) : AppColors.border),
               width: selected ? 1.5 : 1.0,
             ),
           ),
@@ -696,7 +712,7 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
             child: Text(
               label,
               style: TextStyle(
-                color: selected ? AppColors.primary : AppColors.textSecondary,
+                color: selected ? AppColors.primary : (isDark ? const Color(0xFF8B949E) : AppColors.textSecondary),
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 13,
               ),
@@ -707,31 +723,41 @@ class _GeneralTabState extends ConsumerState<_GeneralTab> {
     );
   }
 
-  Widget _presetBtn(String label, String url) => GestureDetector(
-        onTap: () => setState(() => _urlCtrl.text = url),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
-          ),
-        ),
+  Widget _presetBtn(String label, String url) => Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return GestureDetector(
+            onTap: () => setState(() => _urlCtrl.text = url),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF21262D) : AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(color: isDark ? const Color(0xFF8B949E) : AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
+              ),
+            ),
+          );
+        },
       );
 
-  Widget _infoRow(String key, String value) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(key, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-            Text(value, style: const TextStyle(color: AppColors.navy, fontSize: 12, fontWeight: FontWeight.w600)),
-          ],
-        ),
+  Widget _infoRow(String key, String value) => Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(key, style: TextStyle(color: isDark ? const Color(0xFF8B949E) : AppColors.textSecondary, fontSize: 12)),
+                Text(value, style: TextStyle(color: isDark ? const Color(0xFF58A6FF) : AppColors.navy, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          );
+        },
       );
 }
 
@@ -1255,45 +1281,61 @@ class _NetsisTabState extends State<_NetsisTab> {
 }
 
 // ─── Shared Helpers ──────────────────────────────────────────────────────────
-Widget _buildCard({required Widget child}) => Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: child,
+Widget _buildCard({required Widget child}) => Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+            boxShadow: isDark ? null : AppColors.cardShadow,
+          ),
+          child: child,
+        );
+      },
     );
 
-Widget _buildMessage(String msg, bool success) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: success ? AppColors.tealTint : AppColors.errorTint,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: success ? AppColors.teal.withOpacity(0.3) : AppColors.errorBorder),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            success ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded,
-            color: success ? AppColors.teal : AppColors.error,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              msg,
-              style: TextStyle(
-                color: success ? AppColors.teal : AppColors.error,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+Widget _buildMessage(String msg, bool success) => Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: success
+                ? (isDark ? const Color(0xFF0D9488).withOpacity(0.2) : AppColors.tealTint)
+                : (isDark ? const Color(0xFFEF4444).withOpacity(0.2) : AppColors.errorTint),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: success ? AppColors.teal.withOpacity(0.3) : AppColors.errorBorder,
             ),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              Icon(
+                success ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded,
+                color: success ? AppColors.teal : AppColors.error,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  msg,
+                  style: TextStyle(
+                    color: success
+                        ? (isDark ? const Color(0xFF2DD4BF) : AppColors.teal)
+                        : (isDark ? const Color(0xFFF87171) : AppColors.error),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
 
 InputDecoration _inputDecoration(String hint, IconData icon) => InputDecoration(

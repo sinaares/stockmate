@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../shared/services/api_service.dart';
 import '../models/technical_service.dart';
 import '../providers/technical_service_provider.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 class AddEditTechnicalServiceScreen extends ConsumerStatefulWidget {
   final TechnicalService? existing;
@@ -139,9 +140,12 @@ class _AddEditTechnicalServiceScreenState
     final isEdit = widget.existing != null;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(isEdit ? 'Servis Kaydını Düzenle' : 'Yeni Teknik Servis Kaydı'),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -266,13 +270,13 @@ class _AddEditTechnicalServiceScreenState
               children: [
                 DropdownButtonFormField<String>(
                   value: _status,
-                  dropdownColor: Colors.white,
+                  dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
                   decoration: const InputDecoration(
                     labelText: 'Servis Durumu',
                     prefixIcon: Icon(Icons.published_with_changes_rounded),
                   ),
                   items: _statuses
-                      .map((s) => DropdownMenuItem(value: s.$1, child: Text(s.$2, style: const TextStyle(color: AppColors.textPrimary))))
+                      .map((s) => DropdownMenuItem(value: s.$1, child: Text(s.$2, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFE6EDF3) : AppColors.textPrimary))))
                       .toList(),
                   onChanged: (v) {
                     if (v != null) setState(() => _status = v);
@@ -281,7 +285,7 @@ class _AddEditTechnicalServiceScreenState
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
                   value: _technicianId,
-                  dropdownColor: Colors.white,
+                  dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
                   decoration: const InputDecoration(
                     labelText: 'Atanan Teknisyen',
                     prefixIcon: Icon(Icons.engineering_outlined),
@@ -367,10 +371,10 @@ class _AddEditTechnicalServiceScreenState
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-            boxShadow: AppColors.cardShadow,
+            border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+            boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
         ),

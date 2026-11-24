@@ -192,3 +192,26 @@ class AppTheme {
     );
   }
 }
+
+// ─── Theme Context Helpers ───────────────────────────────────────────────────
+extension AppThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get surfaceColor => isDark ? const Color(0xFF161B22) : Colors.white;
+  Color get cardColor => isDark ? const Color(0xFF1C2128) : Colors.white;
+  Color get scaffoldBg => isDark ? const Color(0xFF0D1117) : AppColors.background;
+  Color get borderColor => isDark ? const Color(0xFF30363D) : AppColors.border;
+  Color get navyColor => isDark ? const Color(0xFF58A6FF) : AppColors.navy;
+  Color get textPrimaryColor => isDark ? const Color(0xFFE6EDF3) : AppColors.textPrimary;
+  Color get textSecondaryColor => isDark ? const Color(0xFF8B949E) : AppColors.textSecondary;
+  Color get mutedSurfaceColor => isDark ? const Color(0xFF21262D) : AppColors.surfaceMuted;
+  Color get primaryTintColor => isDark ? const Color(0xFF1E293B) : AppColors.primaryTint;
+
+  BoxDecoration cardDecoration({double radius = 16, Color? border}) {
+    return BoxDecoration(
+      color: surfaceColor,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: border ?? borderColor),
+      boxShadow: isDark ? null : AppColors.cardShadow,
+    );
+  }
+}

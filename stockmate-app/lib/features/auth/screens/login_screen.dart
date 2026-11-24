@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -74,8 +75,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final size   = MediaQuery.sizeOf(context);
     final isWide = size.width > 860;
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: isWide ? _buildWideLayout(auth) : _buildNarrowLayout(auth),
+      body: Stack(
+        children: [
+          isWide ? _buildWideLayout(auth) : _buildNarrowLayout(auth),
+          const Positioned(
+            top: 16,
+            right: 16,
+            child: DarkModeToggleButton(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -145,11 +154,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           ),
         ),
-        // Right Form in Clean White Surface
+        // Right Form in Clean Surface
         Expanded(
           flex: 4,
           child: Container(
-            color: AppColors.background,
+            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0D1117) : AppColors.background,
             child: Center(
               child: FadeTransition(
                 opacity: _fadeAnim,
@@ -162,10 +171,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       child: Container(
                         padding: const EdgeInsets.all(32),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : AppColors.surface,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border),
-                          boxShadow: AppColors.cardShadow,
+                          border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+                          boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
                         ),
                         child: _buildForm(auth),
                       ),
@@ -218,10 +227,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: AppColors.cardShadow,
+                        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+                        boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
                       ),
                       child: _buildForm(auth),
                     ),
@@ -278,9 +287,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: isBossSelected ? Colors.white : Colors.transparent,
+                      color: isBossSelected
+                          ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF21262D) : Colors.white)
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(9),
-                      boxShadow: isBossSelected ? AppColors.cardShadow : null,
+                      boxShadow: isBossSelected && Theme.of(context).brightness != Brightness.dark ? AppColors.cardShadow : null,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -311,9 +322,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: isEmpSelected ? Colors.white : Colors.transparent,
+                      color: isEmpSelected
+                          ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF21262D) : Colors.white)
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(9),
-                      boxShadow: isEmpSelected ? AppColors.cardShadow : null,
+                      boxShadow: isEmpSelected && Theme.of(context).brightness != Brightness.dark ? AppColors.cardShadow : null,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,

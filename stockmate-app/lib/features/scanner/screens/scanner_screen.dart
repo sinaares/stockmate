@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../inventory/providers/inventory_provider.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 class ScannerScreen extends ConsumerStatefulWidget {
   final String role;
@@ -70,11 +71,11 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
+      builder: (ctx) => Container(
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.errorBorder),
           boxShadow: AppColors.elevatedShadow,
@@ -154,6 +155,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
         ),
         actions: [
+          const DarkModeToggleButton(),
           IconButton(
             icon: Icon(
               _flashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
@@ -349,10 +351,10 @@ class _ProductActionSheetState extends ConsumerState<_ProductActionSheet> {
       margin: const EdgeInsets.fromLTRB(14, 0, 14, 24),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.elevatedShadow,
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+        boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.elevatedShadow,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/inventory_provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 class ProductDetailScreen extends ConsumerWidget {
   final int productId;
@@ -24,7 +25,6 @@ class ProductDetailScreen extends ConsumerWidget {
     final statusColor = isLow ? AppColors.warning : AppColors.teal;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           product.name,
@@ -33,6 +33,7 @@ class ProductDetailScreen extends ConsumerWidget {
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         actions: [
+          const DarkModeToggleButton(),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Düzenle',
@@ -44,8 +45,8 @@ class ProductDetailScreen extends ConsumerWidget {
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
-                builder: (_) => AlertDialog(
-                  backgroundColor: Colors.white,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   title: const Text(
                     'Ürünü Sil',
@@ -88,13 +89,15 @@ class ProductDetailScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isLow ? AppColors.warningBorder : AppColors.border,
+                color: isLow
+                    ? AppColors.warningBorder
+                    : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
                 width: isLow ? 1.5 : 1.0,
               ),
-              boxShadow: AppColors.cardShadow,
+              boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
             ),
             child: Column(
               children: [
@@ -198,10 +201,10 @@ class ProductDetailScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-              boxShadow: AppColors.cardShadow,
+              border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+              boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

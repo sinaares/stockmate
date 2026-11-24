@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 final myRequestsProvider = FutureProvider<List<dynamic>>((ref) async {
   return ApiService.instance.getRequests(status: 'pending');
@@ -24,8 +25,9 @@ class _EmployeeHomeScreenState extends ConsumerState<EmployeeHomeScreen> {
     final user = ref.watch(authProvider).user!;
     final requests = ref.watch(myRequestsProvider);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -52,6 +54,7 @@ class _EmployeeHomeScreenState extends ConsumerState<EmployeeHomeScreen> {
           ],
         ),
         actions: [
+          const DarkModeToggleButton(),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
             tooltip: 'Çıkış Yap',
@@ -66,7 +69,7 @@ class _EmployeeHomeScreenState extends ConsumerState<EmployeeHomeScreen> {
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(myRequestsProvider.future),
         color: AppColors.primary,
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
@@ -74,10 +77,10 @@ class _EmployeeHomeScreenState extends ConsumerState<EmployeeHomeScreen> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF161B22) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-                boxShadow: AppColors.cardShadow,
+                border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+                boxShadow: isDark ? null : AppColors.cardShadow,
               ),
               child: Row(
                 children: [
@@ -309,10 +312,10 @@ class _EmployeeHomeScreenState extends ConsumerState<EmployeeHomeScreen> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDark ? const Color(0xFF161B22) : Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                            boxShadow: AppColors.cardShadow,
+                            border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+                            boxShadow: isDark ? null : AppColors.cardShadow,
                           ),
                           child: Row(
                             children: [
@@ -377,9 +380,9 @@ class _EmployeeHomeScreenState extends ConsumerState<EmployeeHomeScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF161B22) : Colors.white,
+          border: Border(top: BorderSide(color: isDark ? const Color(0xFF30363D) : AppColors.border, width: 1)),
         ),
         child: NavigationBar(
           selectedIndex: _navIndex,
@@ -437,6 +440,7 @@ class _EmployeeActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -445,10 +449,10 @@ class _EmployeeActionTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-            boxShadow: AppColors.cardShadow,
+            border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+            boxShadow: isDark ? null : AppColors.cardShadow,
           ),
           child: Column(
             children: [

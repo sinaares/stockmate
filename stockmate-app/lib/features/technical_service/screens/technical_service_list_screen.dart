@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/technical_service.dart';
 import '../providers/technical_service_provider.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 class TechnicalServiceListScreen extends ConsumerStatefulWidget {
   const TechnicalServiceListScreen({super.key});
@@ -51,9 +52,12 @@ class _TechnicalServiceListScreenState
     final servicesAsync = ref.watch(technicalServicesProvider(filters));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Teknik Servis Yönetimi'),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
@@ -228,10 +232,10 @@ class _ServiceCard extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-            boxShadow: AppColors.cardShadow,
+            border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+            boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

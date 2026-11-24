@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 final dashboardStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   return ApiService.instance.getStats();
@@ -33,7 +34,6 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
     final user = ref.watch(authProvider).user!;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -65,6 +65,7 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
             tooltip: 'Barkod Tara',
             onPressed: () => context.push('/boss/scanner'),
           ),
+          const DarkModeToggleButton(),
           stats.when(
             data: (data) {
               final pending = (data['pendingRequests'] ?? 0) as int;
@@ -136,10 +137,10 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: AppColors.cardShadow,
+                    border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+                    boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -213,9 +214,9 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
+          border: Border(top: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border, width: 1)),
         ),
         child: NavigationBar(
           selectedIndex: _navIndex,
@@ -284,12 +285,7 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
                 // Manager Greeting & Enterprise Status Header
                 Container(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: AppColors.cardShadow,
-                  ),
+                  decoration: _cardDeco(context),
                   child: Row(
                     children: [
                       Container(
@@ -496,18 +492,23 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
     );
   }
 
+  BoxDecoration _cardDeco(BuildContext context, {double radius = 16}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: isDark ? const Color(0xFF161B22) : Colors.white,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+      boxShadow: isDark ? null : AppColors.cardShadow,
+    );
+  }
+
   Widget _buildCategoryBreakdown(BuildContext context, List<dynamic> categories) {
     final topCats = categories.take(5).toList();
     final maxQty = topCats.fold<num>(1, (max, c) => (c['total_qty'] as num) > max ? (c['total_qty'] as num) : max);
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.cardShadow,
-      ),
+      decoration: _cardDeco(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -623,12 +624,7 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.cardShadow,
-      ),
+      decoration: _cardDeco(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -739,12 +735,7 @@ class _BossDashboardScreenState extends ConsumerState<BossDashboardScreen> {
   Widget _buildRecentActivity(BuildContext context, List<dynamic> items) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.cardShadow,
-      ),
+      decoration: _cardDeco(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -910,6 +901,7 @@ class _ExecutiveStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -918,10 +910,10 @@ class _ExecutiveStatCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-            boxShadow: AppColors.cardShadow,
+            border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+            boxShadow: isDark ? null : AppColors.cardShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1005,6 +997,7 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Material(
         color: Colors.transparent,
@@ -1014,10 +1007,10 @@ class _QuickActionTile extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF161B22) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-              boxShadow: AppColors.cardShadow,
+              border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+              boxShadow: isDark ? null : AppColors.cardShadow,
             ),
             child: Column(
               children: [

@@ -32,6 +32,43 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   bool get isDark => state == ThemeMode.dark;
 }
 
+// ─── Dark Mode Toggle Button (AppBar actions için) ──────────────────────────
+/// Her sayfanın AppBar'ında en üstte yer alan gece modu aç/kapa butonu.
+class DarkModeToggleButton extends ConsumerWidget {
+  const DarkModeToggleButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF21262D) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: IconButton(
+        padding: const EdgeInsets.all(6),
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        splashRadius: 18,
+        onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
+        tooltip: isDark ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç',
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: Icon(
+            isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+            key: ValueKey(isDark),
+            color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF475569),
+            size: 19,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── App Root ────────────────────────────────────────────────────────────────
 class StockMateApp extends ConsumerWidget {
   const StockMateApp({super.key});

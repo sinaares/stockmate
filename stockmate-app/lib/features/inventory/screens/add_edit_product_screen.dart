@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../providers/inventory_provider.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 class AddEditProductScreen extends ConsumerStatefulWidget {
   final int? productId;
@@ -104,9 +105,12 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(widget.isEditing ? 'Ürünü Düzenle' : 'Yeni Ürün Kaydı'),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -164,7 +168,7 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 const SizedBox(height: 14),
                 DropdownButtonFormField<int>(
                   value: _categoryId,
-                  dropdownColor: Colors.white,
+                  dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
                   decoration: const InputDecoration(
                     labelText: 'Kategori Seçimi',
                     prefixIcon: Icon(Icons.category_outlined),
@@ -212,7 +216,7 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                       flex: 2,
                       child: DropdownButtonFormField<String>(
                         value: _unit,
-                        dropdownColor: Colors.white,
+                        dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
                         decoration: const InputDecoration(labelText: 'Birim'),
                         items: ['adet', 'metre', 'kg', 'litre', 'kutu', 'paket', 'rulo', 'set']
                             .map((u) => DropdownMenuItem(
@@ -299,10 +303,10 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-            boxShadow: AppColors.cardShadow,
+            border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+            boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
         ),

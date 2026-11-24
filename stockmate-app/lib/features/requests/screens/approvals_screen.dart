@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/services/api_service.dart';
 import '../models/request_model.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 final pendingRequestsProvider = FutureProvider<List<RequestModel>>((ref) async {
   final data = await ApiService.instance.getRequests(status: 'pending');
@@ -42,7 +43,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     final reason = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'İsteği Reddet',
@@ -99,9 +100,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     final requests = ref.watch(pendingRequestsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Onay İstekleri'),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(pendingRequestsProvider.future),
@@ -197,10 +201,10 @@ class _RequestCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.cardShadow,
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+        boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

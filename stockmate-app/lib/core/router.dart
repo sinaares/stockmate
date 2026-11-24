@@ -18,6 +18,7 @@ import '../features/technical_service/screens/technical_service_detail_screen.da
 import '../features/technical_service/screens/add_edit_technical_service_screen.dart';
 import '../features/technical_service/models/technical_service.dart';
 import 'constants/app_colors.dart';
+import '../app.dart'; // DarkModeToggleButton
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
@@ -68,10 +69,15 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Profil & Hesap'),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -80,16 +86,16 @@ class ProfileScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF161B22) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border),
-                boxShadow: AppColors.cardShadow,
+                border: Border.all(color: isDark ? const Color(0xFF30363D) : AppColors.border),
+                boxShadow: isDark ? null : AppColors.cardShadow,
               ),
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 38,
-                    backgroundColor: AppColors.navy,
+                    backgroundColor: isDark ? const Color(0xFF2563EB) : AppColors.navy,
                     child: Text(
                       user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
                       style: const TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.w700),
@@ -98,8 +104,8 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     user.name,
-                    style: const TextStyle(
-                      color: AppColors.navy,
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF58A6FF) : AppColors.navy,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -107,7 +113,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     user.email,
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    style: TextStyle(color: isDark ? const Color(0xFF8B949E) : AppColors.textSecondary, fontSize: 13),
                   ),
                   const SizedBox(height: 14),
                   Container(

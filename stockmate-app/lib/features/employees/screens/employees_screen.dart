@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 final employeesProvider = FutureProvider<List<dynamic>>((ref) => ApiService.instance.getEmployees());
 
@@ -13,9 +14,12 @@ class EmployeesScreen extends ConsumerWidget {
     final employees = ref.watch(employeesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Personel & Kullanıcı Yönetimi'),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
@@ -66,12 +70,14 @@ class EmployeesScreen extends ConsumerWidget {
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isActive ? AppColors.border : AppColors.errorBorder,
+                          color: isActive
+                              ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border)
+                              : AppColors.errorBorder,
                         ),
-                        boxShadow: AppColors.cardShadow,
+                        boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
                       ),
                       child: Row(
                         children: [
@@ -164,8 +170,8 @@ class EmployeesScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text(
           'Yeni Personel Hesabı',

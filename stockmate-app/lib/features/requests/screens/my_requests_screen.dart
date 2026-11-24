@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/services/api_service.dart';
 import '../models/request_model.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 final myRequestsListProvider = FutureProvider<List<RequestModel>>((ref) async {
   final data = await ApiService.instance.getRequests();
@@ -17,9 +18,12 @@ class MyRequestsScreen extends ConsumerWidget {
     final requests = ref.watch(myRequestsListProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('İşlem İsteklerim'),
+        actions: const [
+          DarkModeToggleButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(myRequestsListProvider.future),
@@ -98,10 +102,10 @@ class _MyRequestTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.cardShadow,
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
+        boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
       ),
       child: Row(
         children: [

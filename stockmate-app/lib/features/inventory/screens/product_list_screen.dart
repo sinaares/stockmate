@@ -6,6 +6,7 @@ import '../providers/inventory_provider.dart';
 import '../models/product_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/services/api_service.dart';
+import '../../../app.dart'; // DarkModeToggleButton
 
 final categoriesProvider = FutureProvider<List<dynamic>>((ref) => ApiService.instance.getCategories());
 
@@ -30,11 +31,13 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     final user = ref.watch(authProvider).user!;
     final cats = ref.watch(categoriesProvider);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Ürün & Stok Yönetimi'),
         actions: [
+          const DarkModeToggleButton(),
           if (user.isBoss)
             IconButton(
               icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -55,9 +58,9 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
           // Search & Filter Header
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF161B22) : Colors.white,
+              border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF30363D) : AppColors.border, width: 1)),
             ),
             child: Column(
               children: [
@@ -284,13 +287,13 @@ class _ProductCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isLowStock ? AppColors.warningBorder : AppColors.border,
+              color: isLowStock ? AppColors.warningBorder : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF30363D) : AppColors.border),
               width: isLowStock ? 1.2 : 1.0,
             ),
-            boxShadow: AppColors.cardShadow,
+            boxShadow: Theme.of(context).brightness == Brightness.dark ? null : AppColors.cardShadow,
           ),
           child: Row(
             children: [
